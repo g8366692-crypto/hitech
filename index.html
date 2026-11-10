@@ -76,23 +76,37 @@ async function initSupabase(){if(!window.supabase||!window.HITECH_SUPABASE_CONFI
 async function startWorkspace(){hideAuth();document.getElementById("userEmail").textContent=currentUser.email||"Usuário";setSync("Sincronizando...");try{projects=await allProjects();renderDashboard();if(realtimeChannel)await supabaseClient.removeChannel(realtimeChannel);realtimeChannel=supabaseClient.channel("hitech-projects-sync").on("postgres_changes",{event:"*",schema:"public",table:"projects"},async()=>{try{projects=await allProjects();const page=document.querySelector(".nav button.active")?.dataset.page;if(currentId&&projects.some(p=>p.id===currentId)){if(page===undefined)renderProject();else if(page==="dashboard")renderDashboard();else if(page==="projects")renderProjects();else if(page==="timeline")renderGlobalTimeline();else if(page==="backup")renderBackup();else renderProject()}}catch(e){console.error(e)}}).subscribe();setSync("Sincronizado")}catch(e){setSync("Falha na sincronização",true);alert("Não foi possível carregar os projetos do Supabase: "+e.message)}}
 async function load(){await initSupabase()}
 async function allProjects(){
- const {data,error}=await supabaseClient
-  .from("projects")
-  .select("id,data,updated_at")
-  .order("updated_at",{ascending:false});
-
+ const {data,error}=await supabaseClient.from("projects").select("id,data,updated_at").order("updated_at",{ascending:false});
  if(error)throw error;
-
  return (data||[]).map(row=>({
   ...row.data,
-  projectRef:row.data?.projectRef ||
-   (String(row.data?.id||"").startsWith("PRJ-")?row.data.id:undefined),
+  projectRef:row.data?.projectRef || (String(row.data?.id||"").startsWith("PRJ-")?row.data.id:undefined),
   id:row.id,
   updated:row.data?.updated||row.updated_at,
   _serverUpdatedAt:row.updated_at
  }));
 }
-async function save(p){const expected=p._serverUpdatedAt;p.updated=new Date().toISOString();const payload={...p};delete payload._serverUpdatedAt;setSync("Salvando...");let result;if(expected){result=await supabaseClient.from("projects").update({data:payload,updated_at:p.updated}).eq("id",p.id).eq("updated_at",expected).select("id")}else{result=await supabaseClient.from("projects").insert({id:p.id,data:payload,updated_at:p.updated}).select("id")}if(result.error){setSync("Erro ao salvar",true);throw result.error}if(!result.data?.length){projects=await allProjects();setSync("Conflito de edição",true);alert("Este projeto foi alterado por outra pessoa enquanto você estava editando. Recarreguei a versão mais recente para evitar sobrescrever as alterações. Confira os dados e refaça sua edição, se necessário.");if(currentId===p.id)renderProject();return false}projects=await allProjects();setSync("Sincronizado");return p}
+async function save(p){
+ const expected=p._serverUpdatedAt;
+ p.updated=new Date().toISOString();
+ const payload={...p,id:p.projectRef||p.id};
+ delete payload._serverUpdatedAt;
+ setSync("Salvando...");
+ let result;
+ if(expected){
+  result=await supabaseClient.from("projects").update({data:payload,updated_at:p.updated}).eq("id",p.id).eq("updated_at",expected).select("id");
+ }else{
+  result=await supabaseClient.from("projects").insert({id:p.id,data:payload,updated_at:p.updated}).select("id");
+ }
+ if(result.error){setSync("Erro ao salvar",true);throw result.error}
+ if(!result.data?.length){
+  projects=await allProjects();setSync("Conflito de edição",true);
+  alert("Este projeto foi alterado por outra pessoa enquanto você estava editando. Recarreguei a versão mais recente para evitar sobrescrever as alterações. Confira os dados e refaça sua edição, se necessário.");
+  if(currentId===p.id)renderProject();
+  return false;
+ }
+ projects=await allProjects();setSync("Sincronizado");return p;
+}
 function getP(){return projects.find(p=>p.id===currentId)}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function dateNow(){let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -125,7 +139,7 @@ document.getElementById("view").innerHTML=`
 ${attentionHTML()}<div class="panel"><div class="panelhead"><h2>Projetos recentes</h2><button class="btn small" onclick="showPage('projects')">Ver todos</button></div>${projectTable(projects.slice().sort((a,b)=>(b.updated||"").localeCompare(a.updated||"")).slice(0,8))}</div>
 ${backupNotice()}`}
 function projectTable(list){if(!list.length)return `<div class="empty"><div class="big">▤</div><b>Nenhum projeto cadastrado</b><p>Comece criando o primeiro projeto de desenvolvimento.</p><button class="btn primary" onclick="newProject()">Cadastrar projeto</button></div>`;
-return `<div class="tablewrap"><table><thead><tr><th>Projeto / Produto</th><th>Tipo</th><th>Solicitante</th><th>Responsável</th><th>Prazo</th><th>Progresso</th><th>Status</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.code||"—")} · ${esc(p.name)}</strong><br><span class="muted">${esc(p.id.slice(0,8))}</span></td><td>${esc(p.type||"—")}</td><td>${esc(p.requester||"—")}</td><td>${esc(p.owner||"—")}</td><td>${fmt(p.due)}<br>${healthBadge(p)}</td><td><div style="min-width:95px"><b>${progress(p)}%</b><div class="progress"><span style="width:${progress(p)}%"></span></div></div></td><td>${statusBadge(p.status)}</td><td><button class="btn small" onclick="openProject('${p.id}')">Abrir →</button></td></tr>`).join("")}</tbody></table></div>`}
+return `<div class="tablewrap"><table><thead><tr><th>Projeto / Produto</th><th>Tipo</th><th>Solicitante</th><th>Responsável</th><th>Prazo</th><th>Progresso</th><th>Status</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.code||"—")} · ${esc(p.name)}</strong><br><span class="muted">${esc(p.projectRef||p.id.slice(0,8))}</span></td><td>${esc(p.type||"—")}</td><td>${esc(p.requester||"—")}</td><td>${esc(p.owner||"—")}</td><td>${fmt(p.due)}<br>${healthBadge(p)}</td><td><div style="min-width:95px"><b>${progress(p)}%</b><div class="progress"><span style="width:${progress(p)}%"></span></div></div></td><td>${statusBadge(p.status)}</td><td><button class="btn small" onclick="openProject('${p.id}')">Abrir →</button></td></tr>`).join("")}</tbody></table></div>`}
 function showPage(page){document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="dashboard")renderDashboard();if(page==="projects")renderProjects();if(page==="timeline")renderGlobalTimeline();if(page==="backup")renderBackup()}
 function renderProjects(){document.getElementById("crumb").textContent="Projetos";document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Portfólio</div><h1>Projetos de desenvolvimento</h1><p class="sub">Consulte o cadastro, cronograma, aprovações e evidências de cada projeto.</p></div><button class="btn primary" onclick="newProject()">＋ Novo projeto</button></div><div class="panel"><div class="panelhead"><h2>Todos os projetos</h2><div class="toolbar"><div class="search"><input id="projectSearch" placeholder="Buscar por código, produto ou solicitante..." oninput="filterProjects()"></div><select id="statusFilter" onchange="filterProjects()" class="btn small"><option value="">Todos os status</option><option value="__late">Com atraso / em risco</option><option>Em andamento</option><option>Aguardando aprovação</option><option>Concluído</option><option>Reprovado</option></select></div></div><div id="projectTable">${projectTable(projects)}</div></div>`}
 function filterProjects(){let q=document.getElementById("projectSearch").value.toLowerCase(),s=document.getElementById("statusFilter").value;let l=projects.filter(p=>(!s||(s==="__late"?["late","risk"].includes(health(p).k):p.status===s))&&[p.name,p.code,p.requester,p.owner].join(" ").toLowerCase().includes(q));document.getElementById("projectTable").innerHTML=projectTable(l)}
@@ -153,11 +167,11 @@ async function migrateLegacyFiles(value,projectId){if(Array.isArray(value)){for(
 function readBlobAsDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)})}
 async function expandFilesForBackup(value){if(Array.isArray(value)){const out=[];for(const v of value)out.push(await expandFilesForBackup(v));return out}if(value&&typeof value==="object"){const out={...value};if(value.path){const {data,error}=await supabaseClient.storage.from(STORAGE_BUCKET).download(value.path);if(error)throw error;out.data=await readBlobAsDataURL(data)}for(const k of Object.keys(out)){if(k!=="data")out[k]=await expandFilesForBackup(out[k])}return out}return value}
 async function createProject(){let val=id=>document.getElementById(id).value.trim();let required=["f_name","f_type","f_origin","f_needDate","f_receivedDate","f_requester","f_owner","f_reason"];if(required.some(id=>!val(id))){alert("Preencha os campos obrigatórios (*) para cadastrar o projeto.");return}
-let id=crypto.randomUUID();let projectRef="PRJ-"+Date.now();let p={id,projectRef,name:val("f_name"),code:val("f_code"),type:val("f_type"),origin:val("f_origin"),needDate:val("f_needDate"),receivedDate:val("f_receivedDate"),requester:val("f_requester"),department:val("f_department"),owner:val("f_owner"),due:val("f_due"),dueOriginal:val("f_due"),dueHistory:[],reason:val("f_reason"),status:"Em andamento",created:dateNow(),updated:new Date().toISOString(),stages:STAGES.map(s=>({number:s[0],name:s[1],status:"Não iniciada",checks:s[3].map(x=>({label:x,done:false})),notes:"",start:"",end:"",plannedStart:"",plannedEnd:"",delayCause:"",delayNote:"",replans:[],responsible:"",files:[]})),generalFiles:[],events:[]};
+let projectRef="PRJ-"+Date.now();let id=crypto.randomUUID();let p={id,projectRef,name:val("f_name"),code:val("f_code"),type:val("f_type"),origin:val("f_origin"),needDate:val("f_needDate"),receivedDate:val("f_receivedDate"),requester:val("f_requester"),department:val("f_department"),owner:val("f_owner"),due:val("f_due"),dueOriginal:val("f_due"),dueHistory:[],reason:val("f_reason"),status:"Em andamento",created:dateNow(),updated:new Date().toISOString(),stages:STAGES.map(s=>({number:s[0],name:s[1],status:"Não iniciada",checks:s[3].map(x=>({label:x,done:false})),notes:"",start:"",end:"",plannedStart:"",plannedEnd:"",delayCause:"",delayNote:"",replans:[],responsible:"",files:[]})),generalFiles:[],events:[]};
 p.generalFiles=await filesFrom(document.getElementById("f_files"),"Abertura do projeto",id);p.events.push({date:new Date().toISOString(),title:"Projeto cadastrado",detail:`Necessidade originada em ${fmt(p.needDate)}; solicitação recebida em ${fmt(p.receivedDate)}. Solicitante: ${p.requester}.`});await save(p);closeModal();openProject(id)}
 function openProject(id){currentId=id;currentTab="overview";renderProject()}
 function renderProject(){let p=getP();if(!p)return showPage("projects");document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["identification","Identificação"],["planning","Planejamento F-8.03.01"],["stages","Cronograma – 23 etapas"],["suppliers","Fornecedores"],["environment","Análise ambiental"],["approvals","Aprovações"],["evidence","Evidências"],["history","Histórico"]];
-document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Projeto ${esc(p.id)}</div><h1>${esc(p.name)}</h1><p class="sub">${esc(p.code||"Sem código")} · Tipo ${esc(p.type)} · Criado em ${fmt(p.created)}</p></div><div class="toolbar"><button class="btn" onclick="showPage('projects')">← Projetos</button><button class="btn primary" onclick="editProject()">Editar dados</button></div></div>
+document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Projeto ${esc(p.projectRef||p.id)}</div><h1>${esc(p.name)}</h1><p class="sub">${esc(p.code||"Sem código")} · Tipo ${esc(p.type)} · Criado em ${fmt(p.created)}</p></div><div class="toolbar"><button class="btn" onclick="showPage('projects')">← Projetos</button><button class="btn primary" onclick="editProject()">Editar dados</button></div></div>
 <div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===2||i===4||i===6?`<div class="group">${i===0?"Projeto":i===2?"Planejamento":i===4?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
 renderProjectTab()}
 function setTab(t){currentTab=t;renderProject()}
@@ -199,10 +213,22 @@ function lastBackup(){try{return localStorage.getItem("hitech_last_backup")||""}
 function backupNotice(){let l=lastBackup(),d=l?Math.floor((Date.now()-new Date(l))/864e5):null;if(!projects.length&&!l)return `<div class="notice blue">Os projetos e anexos ficam sincronizados na nuvem. Faça backups regulares na aba <b>Backup</b>.</div>`;
 return d===null||d>7?`<div class="notice"><b>Backup pendente:</b> ${d===null?"nenhum backup foi feito ainda":"o último foi há "+d+" dias"}. Os dados ficam na nuvem. <button class="btn small" onclick="exportBackup()">⇩ Fazer backup agora</button></div>`:`<div class="notice blue">Último backup em ${new Date(l).toLocaleDateString("pt-BR")}. Os dados ficam na nuvem; mantenha backups regulares.</div>`}
 async function exportBackup(){try{projects=await allProjects();setSync("Preparando backup...");const complete=[];for(const p of projects)complete.push(await expandFilesForBackup(p));let data={app:"hitech_dev_products",version:2,exportedAt:new Date().toISOString(),projects:complete},a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:"application/json"}));a.download="hitech_backup_"+dateNow()+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);try{localStorage.setItem("hitech_last_backup",data.exportedAt)}catch(e){}setSync("Backup concluído");let pg=document.querySelector(".nav button.active")?.dataset.page;if(pg==="backup")renderBackup();if(pg==="dashboard")renderDashboard()}catch(e){setSync("Erro no backup",true);alert("Não foi possível gerar o backup completo: "+e.message)}}
-async function putMany(list){for(const p of list){await migrateLegacyFiles(p,p.id);const {error}=await supabaseClient.from("projects").upsert({id:p.id,data:p,updated_at:p.updated||new Date().toISOString()},{onConflict:"id"});if(error)throw error}}
+function isUuid(value){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||""))}
+async function putMany(list){
+ for(const original of list){
+  const p={...original};
+  const oldId=String(p.id||"");
+  const dbId=isUuid(oldId)?oldId:crypto.randomUUID();
+  const projectRef=p.projectRef||(oldId.startsWith("PRJ-")?oldId:"PRJ-"+Date.now());
+  p.id=projectRef;p.projectRef=projectRef;
+  await migrateLegacyFiles(p,dbId);
+  const {error}=await supabaseClient.from("projects").upsert({id:dbId,data:p,updated_at:p.updated||new Date().toISOString()},{onConflict:"id"});
+  if(error)throw error;
+ }
+}
 function importBackup(input){let f=input.files[0];input.value="";if(!f)return;let r=new FileReader();r.onload=async()=>{let d;try{d=JSON.parse(r.result)}catch(e){alert("Arquivo inválido: não é um backup em formato JSON.");return}
 if(d.app!=="hitech_dev_products"||!Array.isArray(d.projects)){alert("Este arquivo não é um backup do sistema HiTech.");return}
-let m=new Map((await allProjects()).map(p=>[p.id,p])),add=[],nw=0,up=0,keep=0;d.projects.forEach(p=>{if(!p||!p.id)return;let o=m.get(p.id);if(!o){add.push(p);nw++}else if((p.updated||"")>(o.updated||"")){add.push(p);up++}else keep++});
+let m=new Map((await allProjects()).map(p=>[p.projectRef||p.id,p])),add=[],nw=0,up=0,keep=0;d.projects.forEach(p=>{if(!p||!p.id)return;let key=p.projectRef||p.id,o=m.get(key);if(!o){add.push(p);nw++}else if((p.updated||"")>(o.updated||"")){add.push({...p,id:o.id,projectRef:key});up++}else keep++});
 if(!confirm(`Backup de ${new Date(d.exportedAt).toLocaleDateString("pt-BR")} com ${d.projects.length} projeto(s).\n\n• Novos: ${nw}\n• Atualizados (backup mais recente): ${up}\n• Mantidos (local igual ou mais recente): ${keep}\n\nNada será apagado. Importar?`))return;
 try{await putMany(add);projects=await allProjects();renderBackup();alert("Importação concluída: "+add.length+" projeto(s) importado(s). ")}catch(e){alert("Falha ao importar o backup: "+e.message)}};r.readAsText(f)}
 function renderBackup(){document.getElementById("crumb").textContent="Backup";let l=lastBackup(),sz=projects.reduce((n,p)=>n+JSON.stringify(p).length,0);
