@@ -1,262 +1,217 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HiTech | Gestão de Desenvolvimento</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
+<title>HiTech | Desenvolvimento de Produtos</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f1f3f6;color:#263445}
-header{background:#10283f;color:white;padding:22px 30px;display:flex;justify-content:space-between;align-items:center}
-header h1{margin:0;font-size:23px}
-header small{color:#cbd5df}
-main{max-width:1200px;margin:30px auto;padding:0 20px}
-.panel{background:white;border-radius:10px;padding:25px;margin-bottom:22px;box-shadow:0 2px 10px #0000000b}
-h2{color:#10283f;margin-top:0}
-label{display:block;font-weight:bold;margin:13px 0 6px}
-input,select,textarea{width:100%;padding:11px;border:1px solid #d3dbe3;border-radius:6px;font-size:14px}
-textarea{min-height:90px;resize:vertical}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
-button{background:#f47721;color:white;border:0;padding:12px 20px;border-radius:6px;cursor:pointer;font-weight:bold}
-button:hover{opacity:.9}
-.secondary{background:#526579}
-.hidden{display:none!important}
-#message{padding:12px;background:#e8eff5;border-radius:6px;margin-bottom:15px}
-.project{border:1px solid #dce2e8;border-radius:8px;padding:18px;margin-top:13px}
-.project h3{margin:0 0 10px;color:#10283f}
-.tag{background:#fff0e5;color:#a84b0b;padding:5px 9px;border-radius:20px;font-size:12px}
-.muted{color:#738092;font-size:13px}
-@media(max-width:650px){.grid{grid-template-columns:1fr}header{padding:18px;gap:10px}}
+:root{--navy:#10243a;--navy2:#173550;--orange:#f47721;--bg:#f3f6fa;--card:#fff;--text:#1d2b3a;--muted:#718096;--line:#e4eaf0;--green:#16865b;--red:#c74646;--amber:#b7791f;--blue:#2d6cdf;--shadow:0 8px 28px rgba(16,36,58,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,Segoe UI,Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.app{display:flex;min-height:100vh}.sidebar{width:250px;background:var(--navy);color:#fff;padding:24px 16px;display:flex;flex-direction:column;gap:24px;flex-shrink:0}.brand{display:flex;align-items:center;gap:11px;padding:0 8px}.brandmark{width:38px;height:38px;border-radius:10px;background:var(--orange);display:grid;place-items:center;font-weight:900;font-size:19px}.brand strong{font-size:16px;letter-spacing:.3px}.brand small{display:block;color:#aebdca;font-size:11px;margin-top:2px}.navlabel{font-size:10px;color:#91a4b6;text-transform:uppercase;letter-spacing:1.2px;padding:0 12px;margin-bottom:6px}.nav button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;border-radius:9px;background:transparent;color:#c8d3dd;text-align:left;margin:3px 0}.nav button.active,.nav button:hover{background:#24435e;color:#fff}.nav .ico{width:19px;text-align:center;font-size:16px}.sidebar-foot{margin-top:auto;border-top:1px solid #29435b;padding:16px 8px 0;color:#9eb0c0;font-size:11px}.main{flex:1;min-width:0}.topbar{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:5}.crumb{color:var(--muted);font-size:13px}.crumb b{color:var(--text)}.topright{display:flex;align-items:center;gap:12px}.userdot{width:34px;height:34px;border-radius:50%;background:#e9eff6;color:var(--navy);display:grid;place-items:center;font-weight:700}.content{padding:28px 32px;max-width:1500px;margin:auto}.pagehead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:24px}.eyebrow{color:var(--orange);font-weight:800;text-transform:uppercase;font-size:10px;letter-spacing:1.4px}.pagehead h1{font-size:25px;margin:5px 0 5px;color:var(--navy)}.sub{color:var(--muted);margin:0}.btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 14px;border-radius:8px;font-weight:650}.btn:hover{border-color:#b8c7d6}.btn.primary{background:var(--orange);border-color:var(--orange);color:#fff}.btn.dark{background:var(--navy);border-color:var(--navy);color:#fff}.btn.small{padding:7px 10px;font-size:12px}.stats{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:14px;margin-bottom:22px}.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:17px;box-shadow:var(--shadow)}.stat .label{color:var(--muted);font-size:12px}.stat .num{font-size:27px;font-weight:800;color:var(--navy);margin-top:7px}.stat .hint{font-size:11px;color:var(--muted);margin-top:2px}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}.panelhead{display:flex;align-items:center;justify-content:space-between;padding:17px 20px;border-bottom:1px solid var(--line);gap:12px}.panelhead h2{font-size:15px;margin:0;color:var(--navy)}.panelbody{padding:18px 20px}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.search{min-width:220px;max-width:340px;flex:1}.field input,.field select,.field textarea,.search input{width:100%;border:1px solid #d8e0e8;border-radius:7px;padding:10px 11px;background:#fff;color:var(--text);outline:none}.field input:focus,.field select:focus,.field textarea:focus,.search input:focus{border-color:#7aa5d8;box-shadow:0 0 0 3px #2d6cdf15}.field textarea{min-height:92px;resize:vertical}.field label{display:block;font-size:12px;font-weight:700;color:#4b5d70;margin-bottom:6px}.field small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.full{grid-column:1/-1}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);font-size:12px}th{background:#f8fafc;color:#68798b;font-size:10px;text-transform:uppercase;letter-spacing:.7px}td strong{color:var(--navy)}tbody tr:hover{background:#fafcff}.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:750;background:#eef2f6;color:#526273}.badge.green{background:#e7f6ef;color:#14764e}.badge.orange{background:#fff1e6;color:#b95b12}.badge.red{background:#fdecec;color:#b83c3c}.badge.blue{background:#eaf1ff;color:#315eb0}.empty{text-align:center;padding:42px 20px;color:var(--muted)}.empty .big{font-size:34px;margin-bottom:8px}.projectlayout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px}.projectnav{padding:10px}.projectnav button{display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:transparent;border-radius:7px;color:#526273;margin:2px 0;font-size:12px}.projectnav button.active,.projectnav button:hover{background:#fff2e9;color:#a84d0b;font-weight:750}.projectnav .group{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:#9aa8b5;padding:13px 12px 5px}.detailhead{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.detailhead h2{margin:0;color:var(--navy);font-size:19px}.progress{height:7px;background:#edf1f5;border-radius:10px;overflow:hidden;margin-top:12px}.progress span{display:block;height:100%;background:var(--orange);border-radius:10px}.stage{border:1px solid var(--line);border-radius:9px;padding:14px;margin-bottom:10px;background:#fff}.stagehead{display:flex;align-items:center;justify-content:space-between;gap:12px}.stagehead strong{font-size:13px;color:var(--navy)}.stagehead small{color:var(--muted)}.stagebody{margin-top:12px}.checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.check{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#536477}.check input{margin-top:2px}.filelist{display:flex;flex-direction:column;gap:7px;margin-top:8px}.fileitem{display:flex;justify-content:space-between;align-items:center;background:#f7f9fb;padding:8px 10px;border-radius:7px;font-size:11px}.fileitem span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.muted{color:var(--muted)}.timeline{border-left:2px solid #e7edf3;margin:8px 0 8px 7px;padding-left:18px}.event{position:relative;padding:0 0 17px}.event:before{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:var(--orange);left:-23px;top:4px}.event strong{font-size:12px;color:var(--navy)}.event p{margin:3px 0;color:var(--muted);font-size:11px}.modalback{position:fixed;inset:0;background:#0c1c2dcc;z-index:20;display:none;align-items:center;justify-content:center;padding:20px}.modalback.show{display:flex}.modal{background:#fff;border-radius:13px;width:min(760px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 80px #0003}.modalhead{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modalhead h2{margin:0;color:var(--navy);font-size:17px}.modalbody{padding:22px}.modalfoot{padding:15px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px}.x{border:0;background:transparent;font-size:22px;color:#8291a0}.notice{background:#fff8ed;border:1px solid #f7dfc2;padding:12px 14px;border-radius:8px;color:#81521d;font-size:12px;margin-bottom:16px}.notice.blue{background:#eef5ff;border-color:#d6e5fc;color:#315681}.sectiontitle{font-size:13px;font-weight:800;color:var(--navy);margin:20px 0 10px}.hidden{display:none!important}.mobilemenu{display:none}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.projectlayout{grid-template-columns:220px minmax(0,1fr)}.content{padding:22px}}
+@media(max-width:760px){.sidebar{width:64px;padding:18px 8px}.brand{padding:0;justify-content:center}.brandtext,.navlabel,.nav button .navtext,.sidebar-foot{display:none}.nav button{justify-content:center;padding:12px 4px}.topbar{padding:0 16px}.content{padding:18px 14px}.stats{grid-template-columns:repeat(2,1fr)}.pagehead{flex-direction:column}.projectlayout{grid-template-columns:1fr}.projectnav{display:flex;overflow:auto;gap:4px}.projectnav .group{display:none}.projectnav button{white-space:nowrap;width:auto}.grid,.grid.three{grid-template-columns:1fr}.checklist{grid-template-columns:1fr}.detailhead{flex-direction:column}}
+
+.authscreen{position:fixed;inset:0;background:#f3f6fa;z-index:100;display:none;align-items:center;justify-content:center;padding:20px}.authscreen.show{display:flex}.authcard{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;box-shadow:var(--shadow)}.authcard h1{margin:0 0 6px;color:var(--navy);font-size:22px}.authcard p{color:var(--muted);font-size:13px;margin:0 0 20px}.authcard .field{margin:13px 0}.autherror{display:none;background:#fdecec;color:#a32d2d;padding:10px;border-radius:7px;font-size:12px;margin:12px 0}.autherror.show{display:block}.syncstate{font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
-
-<header>
- <div>
-  <h1>HiTech | Desenvolvimento</h1>
-  <small>Gestão e acompanhamento de projetos</small>
- </div>
- <button id="logout" class="secondary hidden" onclick="sair()">Sair</button>
-</header>
-
-<main>
- <div id="message">Inicializando sistema...</div>
-
- <section id="login" class="panel hidden">
-  <h2>Acesso ao sistema</h2>
-  <label>E-mail</label>
-  <input id="email" type="email" placeholder="seu@email.com">
-  <label>Senha</label>
-  <input id="password" type="password" placeholder="Sua senha">
-  <br><br>
-  <button onclick="entrar()">Entrar</button>
- </section>
-
- <div id="sistema" class="hidden">
-  <section class="panel">
-   <h2>Novo desenvolvimento</h2>
-   <div class="grid">
-    <div>
-     <label>Nome do projeto *</label>
-     <input id="nome" placeholder="Ex.: Prime Clean Flex">
-    </div>
-    <div>
-     <label>Solicitante</label>
-     <input id="solicitante" placeholder="Quem solicitou o desenvolvimento?">
-    </div>
-    <div>
-     <label>Responsável</label>
-     <input id="responsavel" placeholder="Responsável pelo projeto">
-    </div>
-    <div>
-     <label>Data de início</label>
-     <input id="inicio" type="date">
-    </div>
-    <div>
-     <label>Prazo previsto</label>
-     <input id="prazo" type="date">
-    </div>
-    <div>
-     <label>Status</label>
-     <select id="status">
-      <option>Em planejamento</option>
-      <option>Em desenvolvimento</option>
-      <option>Em testes</option>
-      <option>Aguardando aprovação</option>
-      <option>Concluído</option>
-      <option>Cancelado</option>
-     </select>
-    </div>
-    <div>
-     <label>Prioridade</label>
-     <select id="prioridade">
-      <option>Normal</option>
-      <option>Alta</option>
-      <option>Urgente</option>
-      <option>Baixa</option>
-     </select>
-    </div>
-   </div>
-
-   <label>Origem da necessidade</label>
-   <textarea id="origem" placeholder="Descreva como surgiu a necessidade, quem solicitou e qual problema será resolvido."></textarea>
-
-   <label>Objetivo do desenvolvimento</label>
-   <textarea id="objetivo" placeholder="Descreva o que se espera alcançar."></textarea>
-
-   <label>Histórico e observações iniciais</label>
-   <textarea id="historico" placeholder="Reuniões, decisões, recebimento de materiais, testes e outras informações."></textarea>
-
-   <br><br>
-   <button onclick="salvarProjeto()">Salvar desenvolvimento</button>
-  </section>
-
-  <section class="panel">
-   <h2>Projetos cadastrados</h2>
-   <div id="lista"></div>
-  </section>
- </div>
+<div class="authscreen" id="authScreen"><div class="authcard"><div class="brandmark" style="margin-bottom:16px">H</div><h1>HiTech | Desenvolvimento</h1><p>Acesse com seu e-mail e senha autorizados.</p><div class="field"><label>E-mail</label><input id="authEmail" type="email" autocomplete="username" placeholder="nome@empresa.com"></div><div class="field"><label>Senha</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Sua senha"></div><div class="autherror" id="authError"></div><button class="btn primary" style="width:100%" id="authLogin">Entrar no sistema</button><small class="muted" style="display:block;margin-top:14px">O acesso é liberado pelo administrador do Supabase.</small></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brandmark">H</div><div class="brandtext"><strong>HiTech</strong><small>Desenvolvimento de Produtos</small></div></div>
+  <div class="nav">
+    <div class="navlabel">Workspace</div>
+    <button class="active" data-page="dashboard"><span class="ico">▦</span><span class="navtext">Visão geral</span></button>
+    <button data-page="projects"><span class="ico">▤</span><span class="navtext">Projetos</span></button>
+    <button data-page="timeline"><span class="ico">◷</span><span class="navtext">Histórico geral</span></button>
+    <button data-page="backup"><span class="ico">⇩</span><span class="navtext">Backup</span></button>
+  </div>
+  <div class="sidebar-foot">PG-8.03 · Revisão 08<br>Ambiente compartilhado · Supabase</div>
+</aside>
+<main class="main">
+<header class="topbar"><div class="crumb">HiTech <span class="muted">/</span> <b id="crumb">Visão geral</b></div><div class="topright"><span class="syncstate" id="syncState">Conectando...</span><span class="muted" id="userEmail" style="font-size:12px">Desenvolvimento</span><button class="btn small" id="logoutBtn" onclick="logout()" style="display:none">Sair</button></div></header>
+<div class="content" id="view"></div>
 </main>
-
+</div>
+<div class="modalback" id="modal">
+ <div class="modal"><div class="modalhead"><h2 id="modalTitle">Novo projeto</h2><button class="x" onclick="closeModal()">×</button></div><div class="modalbody" id="modalBody"></div><div class="modalfoot"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" id="modalSave">Salvar projeto</button></div></div>
+</div>
 <script>
-let db;
-
-function mensagem(texto){
- document.getElementById("message").textContent=texto;
+const STAGES = [
+["01","Levantamento da necessidade do produto","Registrar a origem da demanda, quem identificou, quem solicitou, quando surgiu e quando chegou ao Desenvolvimento.",["Origem da necessidade identificada","Solicitante e departamento registrados","Data de surgimento e recebimento registradas","Justificativa e resultado esperado descritos","E-mail ou solicitação anexados"]],
+["02","Pesquisa de mercado","Documentar produtos, concorrentes, segmento, aplicações, preços e oportunidades identificadas.",["Pesquisa realizada","Concorrentes identificados","Faixa de preço levantada","Oportunidades e conclusão registradas"]],
+["03","Definição do conceito","Registrar conceito pretendido, aplicação, público-alvo, diferenciais e responsáveis pela definição.",["Conceito definido","Aplicação e público-alvo registrados","Diferenciais descritos","Definição e data registradas"]],
+["04","Definição dos requisitos técnicos","Definir características, especificações, métodos de ensaio e critérios de aceitação antes das avaliações.",["Requisitos técnicos definidos","Métodos de ensaio identificados","Critérios de aceitação definidos","Requisitos legais avaliados"]],
+["05","Pesquisa de matérias-primas e fornecedores","Registrar consultas, fornecedores, documentos técnicos, amostras solicitadas e recebidas, custos e avaliações.",["Fornecedores consultados","Documentação técnica recebida","Amostras solicitadas e recebidas","Disponibilidade avaliada","Necessidade de homologação verificada"]],
+["06","Desenvolvimento da formulação","Manter histórico de versões, matérias-primas, quantidades, lotes, processo, observações e alterações.",["Versão identificada","Matérias-primas e quantidades registradas","Lotes e fornecedores identificados","Alterações justificadas"]],
+["07","Análises e testes laboratoriais internos","Registrar cada ensaio, método, amostra, equipamento, responsável, resultado e critério de aceitação.",["Ensaios definidos","Resultados registrados","Critérios de aceitação comparados","Relatório ou parecer anexado"]],
+["08","Validação técnica","Consolidar a avaliação dos requisitos técnicos e registrar aprovação, reprovação, pendências e ajustes.",["Requisitos avaliados","Resultados comparados às especificações","Pendências tratadas","Parecer técnico registrado"]],
+["09","Análise de concorrentes","Comparar produtos de referência, características, embalagem, volume, aplicação, preço e diferenciais.",["Produtos de referência identificados","Comparação realizada","Conclusão registrada"]],
+["10","Definição do produto final","Registrar nome, código, formulação, características, especificações, aplicação, volume e critérios finais.",["Produto final definido","Código definido ou justificado","Especificação final registrada","Responsável e data registrados"]],
+["11","Definição de custo e preço","Registrar custos de matérias-primas, embalagem, fabricação, terceirização e definição comercial.",["Custos levantados","Custo estimado por unidade registrado","Preço definido pela área responsável","Aprovação comercial registrada"]],
+["12","Definição da embalagem","Registrar cada componente, dimensões, material, fornecedor, amostras, recebimento, avaliação e aprovação.",["Componentes definidos","Amostras solicitadas e recebidas","Padrões estabelecidos","Avaliação e aprovação registradas"]],
+["13","Desenvolvimento e aprovação do rótulo","Controlar solicitação, briefing, envio, recebimento de artes, revisões, GMG, dupla checagem, validação externa e arte final.",["Solicitação e briefing registrados","Primeira arte recebida e datada","Revisões e correções registradas","GMG recebido","Duas conferências registradas","Validação de terceiro realizada quando aplicável","Arte final e prova de impressão aprovadas"]],
+["14","Elaboração da ficha técnica","Registrar elaboração, versão, informações técnicas, conferência e aprovação da ficha.",["Ficha técnica elaborada","Dados conferidos","Versão final anexada"]],
+["15","Elaboração da FDS","Registrar elaboração, informações utilizadas, revisão, conferência e versão final da FDS.",["FDS elaborada conforme requisitos aplicáveis","Revisão realizada","Versão final anexada"]],
+["16","Certificação e requisitos regulamentares","Identificar necessidade de certificação, requisitos, protocolos, ensaios, resultados e certificados.",["Aplicabilidade avaliada","Requisitos identificados","Ensaios e documentos acompanhados","Certificado anexado ou não aplicabilidade justificada"]],
+["17","Cadastro do produto e documentação no servidor","Registrar organização documental e cadastro no Boot, respeitando responsáveis e momento definidos no PG.",["Documentos organizados","Especificações disponíveis","Cadastro no Boot acompanhado","Responsáveis e datas registrados"]],
+["18","Produção da amostra ou lote piloto","Registrar solicitação, fabricação, local, responsável, lote, quantidade, materiais, processo e ocorrências.",["Produção solicitada","Data e local registrados","Lote identificado","Quantidade e condições registradas"]],
+["19","Recebimento e validação do lote piloto","Registrar recebimento, coleta, ensaios, laudo e aprovação do Recebimento e Qualidade.",["Recebimento registrado","Amostra identificada","Análises realizadas","Laudo anexado ao projeto","Parecer do Recebimento registrado","Parecer da Qualidade registrado"]],
+["20","Aprovação final do desenvolvimento","Consolidar atendimento às entradas, critérios de aceitação, processos subsequentes, conclusão e aprovação da Diretoria.",["Requisitos de entrada atendidos","Critérios de monitoramento e aceitação definidos","Documentação conferida","Conclusão registrada","Aprovação formal anexada"]],
+["21","Liberação para produção","Registrar condições atendidas, especificações vigentes, cadastros e autorização para produção em série.",["Aprovações aplicáveis concluídas","Especificações vigentes disponíveis","Cadastro no Boot realizado no momento previsto","Liberação registrada"]],
+["22","Lançamento do produto","Registrar data prevista e efetiva, responsáveis, materiais comerciais e comunicação aos setores.",["Data de lançamento registrada","Responsável identificado","Comunicação e materiais anexados"]],
+["23","Acompanhamento pós-lançamento","Registrar desempenho, ocorrências, reclamações, resultados iniciais, melhorias e conclusão.",["Acompanhamento iniciado","Ocorrências registradas","Resultados avaliados","Conclusão documentada"]]
+];
+const ORIGINS=["Solicitação de cliente","Solicitação da Diretoria","Solicitação do setor Comercial","Ampliação da linha de produtos","Pesquisa de mercado","Oportunidade comercial","Necessidade técnica identificada pelo Desenvolvimento","Melhoria ou substituição de produto existente","Necessidade de terceirização","Outra origem"];
+const TYPES=[["A","Novo produto"],["B","Produto existente no mercado"],["C","Alteração de embalagem"],["D1","Alteração de matéria-prima"],["D2","Alteração de característica do produto acabado"],["E","Terceirização"]];
+let projects=[], currentId=null, currentTab="overview", supabaseClient=null, currentUser=null, realtimeChannel=null;
+const STORAGE_BUCKET="hitech-evidencias";
+function setSync(message,isError=false){const el=document.getElementById("syncState");if(el){el.textContent=message;el.style.color=isError?"#c74646":""}}
+function showAuth(message=""){document.getElementById("authScreen").classList.add("show");document.getElementById("authError").textContent=message;document.getElementById("authError").classList.toggle("show",!!message);document.getElementById("logoutBtn").style.display="none"}
+function hideAuth(){document.getElementById("authScreen").classList.remove("show");document.getElementById("logoutBtn").style.display="inline-block"}
+async function signIn(){const email=document.getElementById("authEmail").value.trim(),password=document.getElementById("authPassword").value;const btn=document.getElementById("authLogin");if(!email||!password){showAuth("Informe o e-mail e a senha.");return}btn.disabled=true;btn.textContent="Entrando...";const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});btn.disabled=false;btn.textContent="Entrar no sistema";if(error){showAuth("Não foi possível entrar: "+error.message);return}currentUser=data.user;await startWorkspace()}
+async function logout(){if(realtimeChannel)await supabaseClient.removeChannel(realtimeChannel);await supabaseClient.auth.signOut();currentUser=null;projects=[];showAuth("Você saiu do sistema.")}
+async function initSupabase(){if(!window.supabase||!window.HITECH_SUPABASE_CONFIG?.url||!window.HITECH_SUPABASE_CONFIG?.anonKey){showAuth("Configuração ausente. Preencha o arquivo config.js com a URL e a chave pública do projeto Supabase.");document.getElementById("authLogin").disabled=true;return}supabaseClient=window.supabase.createClient(window.HITECH_SUPABASE_CONFIG.url,window.HITECH_SUPABASE_CONFIG.anonKey);document.getElementById("authLogin").addEventListener("click",signIn);document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key==="Enter")signIn()});const {data:{session}}=await supabaseClient.auth.getSession();if(session){currentUser=session.user;await startWorkspace()}else showAuth() ;supabaseClient.auth.onAuthStateChange(async(event,session)=>{if(event==="SIGNED_OUT"){currentUser=null;projects=[];showAuth()}})}
+async function startWorkspace(){hideAuth();document.getElementById("userEmail").textContent=currentUser.email||"Usuário";setSync("Sincronizando...");try{projects=await allProjects();renderDashboard();if(realtimeChannel)await supabaseClient.removeChannel(realtimeChannel);realtimeChannel=supabaseClient.channel("hitech-projects-sync").on("postgres_changes",{event:"*",schema:"public",table:"projects"},async()=>{try{projects=await allProjects();const page=document.querySelector(".nav button.active")?.dataset.page;if(currentId&&projects.some(p=>p.id===currentId)){if(page===undefined)renderProject();else if(page==="dashboard")renderDashboard();else if(page==="projects")renderProjects();else if(page==="timeline")renderGlobalTimeline();else if(page==="backup")renderBackup();else renderProject()}}catch(e){console.error(e)}}).subscribe();setSync("Sincronizado")}catch(e){setSync("Falha na sincronização",true);alert("Não foi possível carregar os projetos do Supabase: "+e.message)}}
+async function load(){await initSupabase()}
+async function allProjects(){const {data,error}=await supabaseClient.from("projects").select("id,data,updated_at").order("updated_at",{ascending:false});if(error)throw error;return (data||[]).map(row=>({...row.data,id:row.id,updated:row.data?.updated||row.updated_at,_serverUpdatedAt:row.updated_at}))}
+async function save(p){const expected=p._serverUpdatedAt;p.updated=new Date().toISOString();const payload={...p};delete payload._serverUpdatedAt;setSync("Salvando...");let result;if(expected){result=await supabaseClient.from("projects").update({data:payload,updated_at:p.updated}).eq("id",p.id).eq("updated_at",expected).select("id")}else{result=await supabaseClient.from("projects").insert({id:p.id,data:payload,updated_at:p.updated}).select("id")}if(result.error){setSync("Erro ao salvar",true);throw result.error}if(!result.data?.length){projects=await allProjects();setSync("Conflito de edição",true);alert("Este projeto foi alterado por outra pessoa enquanto você estava editando. Recarreguei a versão mais recente para evitar sobrescrever as alterações. Confira os dados e refaça sua edição, se necessário.");if(currentId===p.id)renderProject();return false}projects=await allProjects();setSync("Sincronizado");return p}
+function getP(){return projects.find(p=>p.id===currentId)}
+function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function dateNow(){let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+const DEFAULT_DAYS=[5,10,5,5,15,20,10,5,3,3,5,15,20,3,3,15,3,10,7,3,2,2,30];
+const DELAY_CAUSES=["Aguardando fornecedor ou amostra","Aguardando terceiro (gráfica, laboratório, certificadora)","Aguardando aprovação interna","Retrabalho ou reprovação técnica","Mudança de escopo ou requisito","Prioridade ou falta de recurso","Outro"];
+function dayDiff(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5)}
+function addWork(d,n){let x=new Date(d+"T12:00:00");while(n>0){x.setDate(x.getDate()+1);if(x.getDay()%6)n--}return x.toISOString().slice(0,10)}
+function stageDelay(s){if(!s.plannedEnd||s.status==="Suspensa")return null;if(s.status==="Concluída"){let d=s.end?dayDiff(s.plannedEnd,s.end):0;return d>0?{kind:"done",days:d}:null}let d=dayDiff(s.plannedEnd,dateNow());return d>0?{kind:"open",days:d}:null}
+function stageSoon(s){if(!s.plannedEnd||s.status==="Concluída"||s.status==="Suspensa")return false;let d=dayDiff(dateNow(),s.plannedEnd);return d>=0&&d<=3}
+function delayBadge(s){let d=stageDelay(s);if(d)return `<span class="badge red">${d.kind==="open"?"Atrasada "+d.days+"d":"Concluída com "+d.days+"d de atraso"}</span>`;if(stageSoon(s)){let n=dayDiff(dateNow(),s.plannedEnd);return `<span class="badge orange">${n?"Vence em "+n+"d":"Vence hoje"}</span>`}return ""}
+function health(p){if(["Concluído","Reprovado","Suspenso"].includes(p.status))return{k:"none"};let n=(p.stages||[]).filter(s=>stageDelay(s)?.kind==="open").length,t=dateNow();if(p.due&&p.due<t)return{k:"late",n,days:dayDiff(p.due,t)};if(n)return{k:"risk",n};if(p.due&&dayDiff(t,p.due)<=7)return{k:"soon",days:dayDiff(t,p.due)};return{k:"ok"}}
+function healthBadge(p){let h=health(p);return h.k==="late"?`<span class="badge red">Atrasado ${h.days}d</span>`:h.k==="risk"?`<span class="badge orange">${h.n} etapa(s) atrasada(s)</span>`:h.k==="soon"?`<span class="badge orange">Vence em ${h.days}d</span>`:""}
+function deadlineSummary(p){let st=p.stages||[],l=st.filter(s=>stageDelay(s)?.kind==="open").length,d=st.filter(s=>stageDelay(s)?.kind==="done").length,w=st.filter(stageSoon).length,n=st.filter(s=>s.plannedEnd).length;return n?`<div class="notice ${l?"":"blue"}"><b>Prazos:</b> ${n}/23 etapas com prazo definido · ${l} atrasada(s) · ${w} vencendo em até 3 dias · ${d} concluída(s) com atraso</div>`:`<div class="notice">Nenhum prazo definido por etapa ainda. Na aba <b>Cronograma</b>, use <b>Planejar prazos</b> para gerar um cronograma sugerido e ajustar depois.</div>`}
+function attentionHTML(){let rows=[];projects.forEach(p=>{if(["Concluído","Reprovado","Suspenso"].includes(p.status))return;(p.stages||[]).forEach(s=>{let d=stageDelay(s);if(d&&d.kind==="open")rows.push({p,s,days:d.days,late:1});else if(stageSoon(s))rows.push({p,s,days:dayDiff(dateNow(),s.plannedEnd),late:0})})});rows.sort((a,b)=>b.late-a.late||(a.late?b.days-a.days:a.days-b.days));
+return `<div class="panel"><div class="panelhead"><h2>Atenção aos prazos</h2><span class="badge ${rows.some(r=>r.late)?"red":""}">${rows.length} etapa(s)</span></div>${rows.length?`<div class="tablewrap"><table><thead><tr><th>Projeto</th><th>Etapa</th><th>Responsável</th><th>Prazo da etapa</th><th>Situação</th><th>Motivo</th><th></th></tr></thead><tbody>${rows.slice(0,10).map(r=>`<tr><td><strong>${esc(r.p.code||r.p.name)}</strong></td><td>${r.s.number}. ${esc(r.s.name)}</td><td>${esc(r.s.responsible||r.p.owner||"—")}</td><td>${fmt(r.s.plannedEnd)}</td><td>${delayBadge(r.s)}</td><td>${esc(r.s.delayCause||"—")}</td><td><button class="btn small" onclick="openProject('${r.p.id}');setTab('stages')">Abrir →</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Nenhuma etapa atrasada ou vencendo nos próximos 3 dias.</div>`}</div>`}
+function fmt(d){if(!d)return "—";let x=new Date(d+"T12:00:00");return x.toLocaleDateString("pt-BR")}
+function statusBadge(s){let c=s==="Concluída"||s==="Aprovado"?"green":s==="Em andamento"?"blue":s==="Atrasada"||s==="Reprovado"?"red":s==="Aguardando aprovação"?"orange":"";return `<span class="badge ${c}">${esc(s||"Não iniciada")}</span>`}
+function doneCount(p){return (p.stages||[]).filter(s=>s.status==="Concluída").length}
+function progress(p){return Math.round(doneCount(p)/STAGES.length*100)}
+function renderDashboard(){document.getElementById("crumb").textContent="Visão geral";let total=projects.length, active=projects.filter(p=>!["Concluído","Reprovado"].includes(p.status)).length, waiting=projects.filter(p=>p.status==="Aguardando aprovação").length, finished=projects.filter(p=>p.status==="Concluído").length, late=projects.filter(p=>["late","risk"].includes(health(p).k)).length;
+document.getElementById("view").innerHTML=`
+<div class="pagehead"><div><div class="eyebrow">Workspace de desenvolvimento</div><h1>Visão geral</h1><p class="sub">Acompanhamento dos projetos conforme o PG-8.03 · Revisão 08.</p></div><button class="btn primary" onclick="newProject()">＋ Novo projeto</button></div>
+<div class="stats">
+<div class="stat"><div class="label">Projetos cadastrados</div><div class="num">${total}</div><div class="hint">Total no ambiente</div></div>
+<div class="stat"><div class="label">Em andamento</div><div class="num">${active}</div><div class="hint">Projetos não encerrados</div></div>
+<div class="stat"><div class="label">Aguardando aprovação</div><div class="num">${waiting}</div><div class="hint">Dependem de decisão</div></div>
+<div class="stat"><div class="label">Concluídos</div><div class="num">${finished}</div><div class="hint">Projetos encerrados</div></div>
+<div class="stat"><div class="label">Com atraso ou em risco</div><div class="num">${late}</div><div class="hint">Projeto ou etapa fora do prazo</div></div>
+</div>
+${attentionHTML()}<div class="panel"><div class="panelhead"><h2>Projetos recentes</h2><button class="btn small" onclick="showPage('projects')">Ver todos</button></div>${projectTable(projects.slice().sort((a,b)=>(b.updated||"").localeCompare(a.updated||"")).slice(0,8))}</div>
+${backupNotice()}`}
+function projectTable(list){if(!list.length)return `<div class="empty"><div class="big">▤</div><b>Nenhum projeto cadastrado</b><p>Comece criando o primeiro projeto de desenvolvimento.</p><button class="btn primary" onclick="newProject()">Cadastrar projeto</button></div>`;
+return `<div class="tablewrap"><table><thead><tr><th>Projeto / Produto</th><th>Tipo</th><th>Solicitante</th><th>Responsável</th><th>Prazo</th><th>Progresso</th><th>Status</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td><strong>${esc(p.code||"—")} · ${esc(p.name)}</strong><br><span class="muted">${esc(p.id.slice(0,8))}</span></td><td>${esc(p.type||"—")}</td><td>${esc(p.requester||"—")}</td><td>${esc(p.owner||"—")}</td><td>${fmt(p.due)}<br>${healthBadge(p)}</td><td><div style="min-width:95px"><b>${progress(p)}%</b><div class="progress"><span style="width:${progress(p)}%"></span></div></div></td><td>${statusBadge(p.status)}</td><td><button class="btn small" onclick="openProject('${p.id}')">Abrir →</button></td></tr>`).join("")}</tbody></table></div>`}
+function showPage(page){document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));if(page==="dashboard")renderDashboard();if(page==="projects")renderProjects();if(page==="timeline")renderGlobalTimeline();if(page==="backup")renderBackup()}
+function renderProjects(){document.getElementById("crumb").textContent="Projetos";document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Portfólio</div><h1>Projetos de desenvolvimento</h1><p class="sub">Consulte o cadastro, cronograma, aprovações e evidências de cada projeto.</p></div><button class="btn primary" onclick="newProject()">＋ Novo projeto</button></div><div class="panel"><div class="panelhead"><h2>Todos os projetos</h2><div class="toolbar"><div class="search"><input id="projectSearch" placeholder="Buscar por código, produto ou solicitante..." oninput="filterProjects()"></div><select id="statusFilter" onchange="filterProjects()" class="btn small"><option value="">Todos os status</option><option value="__late">Com atraso / em risco</option><option>Em andamento</option><option>Aguardando aprovação</option><option>Concluído</option><option>Reprovado</option></select></div></div><div id="projectTable">${projectTable(projects)}</div></div>`}
+function filterProjects(){let q=document.getElementById("projectSearch").value.toLowerCase(),s=document.getElementById("statusFilter").value;let l=projects.filter(p=>(!s||(s==="__late"?["late","risk"].includes(health(p).k):p.status===s))&&[p.name,p.code,p.requester,p.owner].join(" ").toLowerCase().includes(q));document.getElementById("projectTable").innerHTML=projectTable(l)}
+function newProject(){document.getElementById("modalTitle").textContent="Cadastrar novo projeto";document.getElementById("modalBody").innerHTML=`
+<div class="notice">A abertura registra a origem da necessidade e os dados básicos do projeto. Os demais campos serão preenchidos dentro do cadastro.</div>
+<div class="grid">
+<div class="field"><label>Nome do projeto / produto *</label><input id="f_name" placeholder="Ex.: Desenvolvimento de novo aditivo"></div>
+<div class="field"><label>Código do produto</label><input id="f_code" placeholder="Ex.: HT-2075"></div>
+<div class="field"><label>Tipo de desenvolvimento *</label><select id="f_type">${TYPES.map(t=>`<option value="${t[0]}">${t[0]} – ${t[1]}</option>`).join("")}</select></div>
+<div class="field"><label>Origem da necessidade *</label><select id="f_origin">${ORIGINS.map(x=>`<option>${x}</option>`).join("")}</select></div>
+<div class="field"><label>Data em que surgiu a necessidade *</label><input id="f_needDate" type="date" value="${dateNow()}"></div>
+<div class="field"><label>Data de recebimento pelo Desenvolvimento *</label><input id="f_receivedDate" type="date" value="${dateNow()}"></div>
+<div class="field"><label>Quem solicitou *</label><input id="f_requester" placeholder="Nome do solicitante"></div>
+<div class="field"><label>Departamento solicitante</label><input id="f_department" placeholder="Ex.: Comercial"></div>
+<div class="field"><label>Responsável pelo desenvolvimento *</label><input id="f_owner" placeholder="Nome do responsável"></div>
+<div class="field"><label>Prazo previsto</label><input id="f_due" type="date"></div>
+<div class="field full"><label>Descrição da necessidade e justificativa *</label><textarea id="f_reason" placeholder="Descreva como surgiu a necessidade, por que o projeto foi solicitado e qual resultado se espera."></textarea></div>
+<div class="field full"><label>Evidências da solicitação inicial</label><input id="f_files" type="file" multiple><small>Você poderá anexar e-mails, requisições, apresentações, imagens e outros registros.</small></div>
+</div>`;
+document.getElementById("modalSave").onclick=createProject;document.getElementById("modal").classList.add("show")}
+function closeModal(){document.getElementById("modal").classList.remove("show");document.getElementById("modalSave").textContent="Salvar projeto"}
+async function filesFrom(input,stageTitle,projectId=currentId){let files=[...(input?.files||[])],out=[];for(const f of files){if(!projectId)throw new Error("Não foi possível identificar o projeto para anexar o arquivo.");const safeName=f.name.replace(/[^a-zA-Z0-9._-]/g,"_");const path=`${currentUser.id}/${projectId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;const {error}=await supabaseClient.storage.from(STORAGE_BUCKET).upload(path,f,{contentType:f.type||"application/octet-stream",upsert:false});if(error)throw error;out.push({name:f.name,type:f.type,size:f.size,path,uploadedAt:new Date().toISOString(),stage:stageTitle})}return out}
+async function downloadEvidence(path){const {data,error}=await supabaseClient.storage.from(STORAGE_BUCKET).createSignedUrl(path,60);if(error){alert("Não foi possível abrir o anexo: "+error.message);return}window.open(data.signedUrl,"_blank","noopener")}
+async function migrateLegacyFiles(value,projectId){if(Array.isArray(value)){for(let i=0;i<value.length;i++)value[i]=await migrateLegacyFiles(value[i],projectId);return value}if(value&&typeof value==="object"){if(value.data&&typeof value.data==="string"&&value.data.startsWith("data:")&&!value.path){const res=await fetch(value.data),blob=await res.blob(),safeName=(value.name||"anexo").replace(/[^a-zA-Z0-9._-]/g,"_");const path=`${currentUser.id}/${projectId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`;const {error}=await supabaseClient.storage.from(STORAGE_BUCKET).upload(path,blob,{contentType:value.type||blob.type||"application/octet-stream"});if(error)throw error;delete value.data;value.path=path}for(const k of Object.keys(value)){if(k!=="data")value[k]=await migrateLegacyFiles(value[k],projectId)}return value}return value}
+function readBlobAsDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)})}
+async function expandFilesForBackup(value){if(Array.isArray(value)){const out=[];for(const v of value)out.push(await expandFilesForBackup(v));return out}if(value&&typeof value==="object"){const out={...value};if(value.path){const {data,error}=await supabaseClient.storage.from(STORAGE_BUCKET).download(value.path);if(error)throw error;out.data=await readBlobAsDataURL(data)}for(const k of Object.keys(out)){if(k!=="data")out[k]=await expandFilesForBackup(out[k])}return out}return value}
+async function createProject(){let val=id=>document.getElementById(id).value.trim();let required=["f_name","f_type","f_origin","f_needDate","f_receivedDate","f_requester","f_owner","f_reason"];if(required.some(id=>!val(id))){alert("Preencha os campos obrigatórios (*) para cadastrar o projeto.");return}
+let id="PRJ-"+Date.now();let p={id,name:val("f_name"),code:val("f_code"),type:val("f_type"),origin:val("f_origin"),needDate:val("f_needDate"),receivedDate:val("f_receivedDate"),requester:val("f_requester"),department:val("f_department"),owner:val("f_owner"),due:val("f_due"),dueOriginal:val("f_due"),dueHistory:[],reason:val("f_reason"),status:"Em andamento",created:dateNow(),updated:new Date().toISOString(),stages:STAGES.map(s=>({number:s[0],name:s[1],status:"Não iniciada",checks:s[3].map(x=>({label:x,done:false})),notes:"",start:"",end:"",plannedStart:"",plannedEnd:"",delayCause:"",delayNote:"",replans:[],responsible:"",files:[]})),generalFiles:[],events:[]};
+p.generalFiles=await filesFrom(document.getElementById("f_files"),"Abertura do projeto",id);p.events.push({date:new Date().toISOString(),title:"Projeto cadastrado",detail:`Necessidade originada em ${fmt(p.needDate)}; solicitação recebida em ${fmt(p.receivedDate)}. Solicitante: ${p.requester}.`});await save(p);closeModal();openProject(id)}
+function openProject(id){currentId=id;currentTab="overview";renderProject()}
+function renderProject(){let p=getP();if(!p)return showPage("projects");document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["identification","Identificação"],["planning","Planejamento F-8.03.01"],["stages","Cronograma – 23 etapas"],["suppliers","Fornecedores"],["environment","Análise ambiental"],["approvals","Aprovações"],["evidence","Evidências"],["history","Histórico"]];
+document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Projeto ${esc(p.id)}</div><h1>${esc(p.name)}</h1><p class="sub">${esc(p.code||"Sem código")} · Tipo ${esc(p.type)} · Criado em ${fmt(p.created)}</p></div><div class="toolbar"><button class="btn" onclick="showPage('projects')">← Projetos</button><button class="btn primary" onclick="editProject()">Editar dados</button></div></div>
+<div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===2||i===4||i===6?`<div class="group">${i===0?"Projeto":i===2?"Planejamento":i===4?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
+renderProjectTab()}
+function setTab(t){currentTab=t;renderProject()}
+function renderProjectTab(){let p=getP(),el=document.getElementById("projectContent");if(!p||!el)return;
+if(currentTab==="overview")el.innerHTML=overviewHTML(p);
+if(currentTab==="identification")el.innerHTML=identHTML(p);
+if(currentTab==="planning")el.innerHTML=planningHTML(p);
+if(currentTab==="stages")el.innerHTML=stagesHTML(p);
+if(currentTab==="suppliers")el.innerHTML=simpleRecordHTML(p,"suppliers","Desenvolvimento de fornecedores",["Fornecedor","Insumo","Data de início","Data de solicitação da amostra","Data de recebimento da amostra","Responsável","Resultado / conclusão"],"Registre o desenvolvimento do fornecedor, a documentação, as amostras, a homologação e o lote piloto. Considere o estoque mínimo equivalente a 30 dias de consumo previsto no PG-8.03.");
+if(currentTab==="environment")el.innerHTML=simpleRecordHTML(p,"environment","Análise ambiental",["Matéria-prima / insumo","Impacto identificado","Alternativas avaliadas","Melhoria / justificativa","Responsável","Data da avaliação","Conclusão"],"Registrar a avaliação ambiental e a priorização de matérias-primas e insumos de menor impacto.");
+if(currentTab==="approvals")el.innerHTML=approvalsHTML(p);
+if(currentTab==="evidence")el.innerHTML=evidenceHTML(p);
+if(currentTab==="history")el.innerHTML=historyHTML(p);
 }
-
-async function iniciar(){
- if(!window.HITECH_CONFIG ||
-    !window.HITECH_CONFIG.SUPABASE_URL ||
-    !window.HITECH_CONFIG.SUPABASE_ANON_KEY){
-   mensagem("Configuração do Supabase pendente. Precisamos criar config.js.");
-   document.getElementById("login").classList.remove("hidden");
-   return;
- }
-
- db=window.supabase.createClient(
-  window.HITECH_CONFIG.SUPABASE_URL,
-  window.HITECH_CONFIG.SUPABASE_ANON_KEY
- );
-
- const {data}=await db.auth.getSession();
- atualizarTela(data.session);
-
- db.auth.onAuthStateChange((evento,session)=>{
-  atualizarTela(session);
- });
-
- if(data.session) carregarProjetos();
-}
-
-function atualizarTela(session){
- document.getElementById("login").classList.toggle("hidden",!!session);
- document.getElementById("sistema").classList.toggle("hidden",!session);
- document.getElementById("logout").classList.toggle("hidden",!session);
- mensagem(session?"Acesso autorizado ao sistema HiTech.":"Entre com seu usuário para acessar o sistema.");
-}
-
-async function entrar(){
- const email=document.getElementById("email").value;
- const password=document.getElementById("password").value;
-
- const {error}=await db.auth.signInWithPassword({email,password});
-
- if(error) mensagem("Erro no acesso: "+error.message);
-}
-
-async function sair(){
- await db.auth.signOut();
-}
-
-async function salvarProjeto(){
- const nome=document.getElementById("nome").value.trim();
-
- if(!nome){
-  mensagem("Informe o nome do projeto.");
-  return;
- }
-
- const projeto={
-  name:nome,
-  requester:document.getElementById("solicitante").value,
-  owner:document.getElementById("responsavel").value,
-  start_date:document.getElementById("inicio").value||null,
-  due_date:document.getElementById("prazo").value||null,
-  status:document.getElementById("status").value,
-  priority:document.getElementById("prioridade").value,
-  origin:document.getElementById("origem").value,
-  objective:document.getElementById("objetivo").value,
-  history:document.getElementById("historico").value
- };
-
- const {error}=await db.from("developments").insert(projeto);
-
- if(error){
-  mensagem("Não foi possível salvar: "+error.message);
-  return;
- }
-
- mensagem("Desenvolvimento cadastrado com sucesso!");
-
- document.querySelectorAll("#sistema input,#sistema textarea").forEach(el=>el.value="");
-
- carregarProjetos();
-}
-
-async function carregarProjetos(){
- const {data,error}=await db
-  .from("developments")
-  .select("*")
-  .order("created_at",{ascending:false});
-
- if(error){
-  mensagem("Erro ao carregar projetos: "+error.message);
-  return;
- }
-
- const lista=document.getElementById("lista");
- lista.innerHTML="";
-
- if(!data.length){
-  lista.textContent="Nenhum projeto cadastrado.";
-  return;
- }
-
- data.forEach(p=>{
-  const card=document.createElement("div");
-  card.className="project";
-
-  const titulo=document.createElement("h3");
-  titulo.textContent=p.name;
-
-  const tag=document.createElement("span");
-  tag.className="tag";
-  tag.textContent=p.status;
-
-  const detalhes=document.createElement("p");
-  detalhes.textContent="Responsável: "+(p.owner||"Não informado")+
-   " | Solicitante: "+(p.requester||"Não informado");
-
-  const prazo=document.createElement("p");
-  prazo.textContent="Início: "+(p.start_date||"Não definido")+
-   " | Prazo: "+(p.due_date||"Não definido");
-
-  const origem=document.createElement("p");
-  origem.textContent="Origem: "+(p.origin||"Não informada");
-
-  const objetivo=document.createElement("p");
-  objetivo.textContent="Objetivo: "+(p.objective||"Não informado");
-
-  card.append(titulo,tag,detalhes,prazo,origem,objetivo);
-  lista.appendChild(card);
- });
-}
-
-iniciar();
+function overviewHTML(p){return `${deadlineSummary(p)}<div class="panel"><div class="panelbody"><div class="detailhead"><div><div class="eyebrow">Acompanhamento do projeto</div><h2>${esc(p.name)}</h2><p class="sub">Responsável: ${esc(p.owner)} · Solicitante: ${esc(p.requester)}</p></div>${statusBadge(p.status)}</div><div style="display:flex;justify-content:space-between;margin-top:22px;font-size:12px"><b>Progresso das 23 etapas</b><b>${progress(p)}%</b></div><div class="progress"><span style="width:${progress(p)}%"></span></div><div class="grid three" style="margin-top:20px"><div><small class="muted">Necessidade identificada</small><br><b>${fmt(p.needDate)}</b></div><div><small class="muted">Recebida pelo Desenvolvimento</small><br><b>${fmt(p.receivedDate)}</b></div><div><small class="muted">Prazo previsto</small><br><b>${fmt(p.due)}</b> ${healthBadge(p)}${p.dueOriginal&&p.dueOriginal!==p.due?`<br><small class="muted">Original: ${fmt(p.dueOriginal)}</small>`:""}</div></div></div></div>
+<div class="grid"><div class="panel"><div class="panelhead"><h2>Origem da necessidade</h2></div><div class="panelbody"><b>${esc(p.origin)}</b><p>${esc(p.reason)}</p><small class="muted">Solicitado por ${esc(p.requester)} · ${esc(p.department||"Departamento não informado")}</small></div></div><div class="panel"><div class="panelhead"><h2>Próximas etapas</h2></div><div class="panelbody">${(p.stages||[]).filter(s=>s.status!=="Concluída").slice(0,4).map(s=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span>${s.number}. ${esc(s.name)}${s.plannedEnd?` <small class="muted">· até ${fmt(s.plannedEnd)}</small>`:""}</span><span>${delayBadge(s)} ${statusBadge(s.status)}</span></div>`).join("")||"Todas as etapas concluídas."}</div></div></div>
+<div class="panel"><div class="panelhead"><h2>Últimas movimentações</h2><button class="btn small" onclick="setTab('history')">Ver histórico</button></div><div class="panelbody">${timelineHTML(p.events.slice(-5).reverse())}</div></div>`}
+function identHTML(p){return `<div class="panel"><div class="panelhead"><h2>Identificação e origem da necessidade</h2>${statusBadge(p.status)}</div><div class="panelbody"><div class="grid"><div class="field"><label>Origem da necessidade</label><input value="${esc(p.origin)}" readonly></div><div class="field"><label>Tipo de desenvolvimento</label><input value="${esc(p.type)}" readonly></div><div class="field"><label>Data em que surgiu a necessidade</label><input value="${esc(p.needDate)}" readonly></div><div class="field"><label>Data de recebimento pelo Desenvolvimento</label><input value="${esc(p.receivedDate)}" readonly></div><div class="field"><label>Solicitante</label><input value="${esc(p.requester)}" readonly></div><div class="field"><label>Departamento</label><input value="${esc(p.department)}" readonly></div><div class="field"><label>Responsável pelo desenvolvimento</label><input value="${esc(p.owner)}" readonly></div><div class="field"><label>Prazo previsto</label><input value="${esc(p.due)}" readonly></div><div class="field full"><label>Descrição da necessidade / justificativa</label><textarea readonly>${esc(p.reason)}</textarea></div></div><div class="sectiontitle">Evidências da abertura</div>${fileList(p.generalFiles)}</div></div>`}
+const planningFields=[
+["commercial","5.1 Informações comerciais","Marcas e patentes, segmento, volume mensal previsto, mercado, concorrentes, faixa de preço e outras informações comerciais."],
+["product","5.2 Informações do produto","Descrição do produto, tipo de desenvolvimento, características pretendidas e especificações técnicas."],
+["samples","5.3 Amostra / Relatório de análise","Especificações vigentes, amostras de referência, relatórios, datas de solicitação e recebimento, análises e conclusão."],
+["risk","5.4 Análise de riscos","Requisitos estatutários e regulamentares, falha no processo, falta de matéria-prima e demais riscos identificados."],
+["definition","5.5 Definição do produto","Justificativa, disponibilidade de especificação, métodos de ensaio, equipamentos e ferramentas de controle."],
+["materials","5.6 Lista de materiais","Matérias-primas, embalagens, ferramentas, disponibilidade no início do projeto e necessidade de qualificação de fornecedor."],
+["manufacturing","5.7 Fabricação do produto","Descrição detalhada do início e continuidade da fabricação, local, processo, equipamentos e controles."],
+["newprocess","5.8 Necessidade de novos processos","Registrar se haverá novo processo, justificativa, recursos, responsáveis e participação do Gerente de Planejamento e Novos Projetos."],
+["external","5.9 Processos externos","Processos terceirizados, fornecedor, custos, disponibilidade e justificativa."]
+];
+function planningHTML(p){return `<div class="panel"><div class="panelhead"><h2>Planejamento do projeto – F-8.03.01</h2><span class="badge blue">9 blocos de planejamento</span></div><div class="panelbody"><div class="notice blue">Preencha cada bloco e anexe os registros que comprovem as informações. Este módulo detalha os campos previstos no item 6.3 e nas entradas do item 6.4 do PG-8.03.</div>${planningFields.map(f=>{let d=p.planning?.[f[0]]||{};return `<div class="stage"><div class="stagehead"><strong>${f[1]}</strong>${d.updated?`<small>Atualizado em ${fmt(d.updated.slice(0,10))}</small>`:""}</div><p class="muted" style="font-size:11px">${f[2]}</p><div class="field"><label>Registro / descrição</label><textarea id="plan_${f[0]}" placeholder="Descreva as informações, datas, responsáveis, resultados e observações...">${esc(d.text||"")}</textarea></div><div class="grid" style="margin-top:10px"><div class="field"><label>Responsável pelo registro</label><input id="planowner_${f[0]}" value="${esc(d.owner||"")}" placeholder="Nome do responsável"></div><div class="field"><label>Data de realização</label><input id="plandate_${f[0]}" type="date" value="${esc(d.date||"")}"></div></div><div class="field" style="margin-top:10px"><label>Evidências</label><input type="file" multiple id="planfiles_${f[0]}"><div>${fileList(d.files||[])}</div></div><button class="btn small" style="margin-top:10px" onclick="savePlanning('${f[0]}')">Salvar bloco</button></div>`}).join("")}<div class="field"><label>Conclusão do planejamento</label><textarea id="plan_conclusion" placeholder="Registre a conclusão do planejamento e as condições para continuidade...">${esc(p.planning?.conclusion||"")}</textarea></div><button class="btn primary" style="margin-top:10px" onclick="savePlanConclusion()">Salvar conclusão</button></div></div>`}
+async function savePlanning(key){let p=getP(),textv=document.getElementById("plan_"+key).value,owner=document.getElementById("planowner_"+key).value,date=document.getElementById("plandate_"+key).value,files=await filesFrom(document.getElementById("planfiles_"+key),planningFields.find(f=>f[0]===key)[1]);p.planning=p.planning||{};let old=p.planning[key]||{};p.planning[key]={text:textv,owner,date,updated:new Date().toISOString(),files:[...(old.files||[]),...files]};addEvent(p,"Planejamento atualizado",planningFields.find(f=>f[0]===key)[1]);await save(p);renderProjectTab()}
+async function savePlanConclusion(){let p=getP();p.planning=p.planning||{};p.planning.conclusion=document.getElementById("plan_conclusion").value;addEvent(p,"Conclusão do planejamento registrada","F-8.03.01");await save(p);renderProjectTab()}
+function stagesHTML(p){return `<div class="panel"><div class="panelhead"><h2>Cronograma de desenvolvimento</h2><div class="toolbar"><span class="badge blue">${doneCount(p)}/23 concluídas</span><button class="btn primary small" onclick="planDeadlines()">◷ Planejar prazos</button></div></div><div class="panelbody">${deadlineSummary(p)}<div class="notice">Cada etapa possui responsável, datas previstas e reais, status, checklist, observações e anexos. As 23 atividades são uma estrutura de acompanhamento do projeto; os controles obrigatórios do PG-8.03 permanecem vinculados aos itens correspondentes.</div>${p.stages.map((s,i)=>stageHTML(s,i)).join("")}</div></div>`}
+function stageHTML(s,i){return `<div class="stage"><div class="stagehead"><div><strong>${s.number}. ${esc(s.name)}</strong><br><small>${s.checks.filter(c=>c.done).length}/${s.checks.length} verificações concluídas${s.plannedEnd?` · Prazo ${fmt(s.plannedEnd)}`:""}</small></div><div>${statusBadge(s.status)} ${delayBadge(s)} <button class="btn small" onclick="toggleStage(${i})">Editar / abrir</button></div></div><div class="stagebody hidden" id="stagebody_${i}"><p class="muted" style="font-size:12px">${esc(STAGES[i][2])}</p><div class="grid three"><div class="field"><label>Responsável</label><input id="s_owner_${i}" value="${esc(s.responsible||"")}" placeholder="Responsável"></div><div class="field"><label>Início real</label><input type="date" id="s_start_${i}" value="${esc(s.start||"")}"></div><div class="field"><label>Conclusão real</label><input type="date" id="s_end_${i}" value="${esc(s.end||"")}"></div><div class="field"><label>Status</label><select id="s_status_${i}">${["Não iniciada","Em andamento","Aguardando terceiro","Aguardando documento","Aguardando análise","Aguardando aprovação","Concluída","Reprovada","Suspensa"].map(x=>`<option ${s.status===x?"selected":""}>${x}</option>`).join("")}</select></div></div><div class="grid three" style="margin-top:12px"><div class="field"><label>Início previsto</label><input type="date" id="s_pstart_${i}" value="${esc(s.plannedStart||"")}"></div><div class="field"><label>Prazo previsto (término)</label><input type="date" id="s_pend_${i}" value="${esc(s.plannedEnd||"")}"></div><div class="field"><label>Motivo do atraso</label><select id="s_cause_${i}"><option value="">— sem atraso / não informado —</option>${DELAY_CAUSES.map(x=>`<option ${s.delayCause===x?"selected":""}>${x}</option>`).join("")}</select></div><div class="field full"><label>Detalhe do atraso</label><input id="s_dnote_${i}" value="${esc(s.delayNote||"")}" placeholder="Ex.: amostra do fornecedor prevista para o dia 20"></div></div>${(s.replans||[]).length?`<small class="muted">Replanejamentos: ${s.replans.map(r=>`${fmt(r.from)} → ${fmt(r.to)} (${esc(r.reason)})`).join(" · ")}</small>`:""}<div class="sectiontitle">Verificações da etapa</div><div class="checklist">${s.checks.map((c,j)=>`<label class="check"><input type="checkbox" id="s_check_${i}_${j}" ${c.done?"checked":""}>${esc(c.label)}</label>`).join("")}</div><div class="field"><label>Observações, resultados e justificativas</label><textarea id="s_notes_${i}" placeholder="Registre o que foi realizado, datas importantes, resultados, desvios e decisões...">${esc(s.notes||"")}</textarea></div><div class="field" style="margin-top:10px"><label>Anexar evidências desta etapa</label><input type="file" id="s_files_${i}" multiple><small>Anexe e-mails, relatórios, laudos, planilhas, imagens, aprovações e outros comprovantes.</small>${fileList(s.files||[])}</div><button class="btn primary" style="margin-top:12px" onclick="saveStage(${i})">Salvar etapa</button></div></div>`}
+function planDeadlines(){let p=getP();document.getElementById("modalTitle").textContent="Planejar prazos das etapas";document.getElementById("modalSave").textContent="Aplicar prazos";
+document.getElementById("modalBody").innerHTML=`<div class="notice blue">Gera início e término previstos em sequência, em <b>dias úteis</b> (fins de semana ignorados; feriados não são considerados). Os dias abaixo são apenas uma sugestão inicial: ajuste conforme a realidade da HiTech. Etapas concluídas não são alteradas e, se já existir prazo diferente, o replanejamento fica registrado.</div><div class="field" style="margin-bottom:12px"><label>Data de início do projeto</label><input type="date" id="pd_start" value="${esc(p.receivedDate||dateNow())}"></div><div class="grid">${p.stages.map((s,i)=>`<div class="field"><label>${s.number}. ${esc(s.name)}</label><input type="number" min="0" id="pd_${i}" value="${DEFAULT_DAYS[i]}"><small>dias úteis</small></div>`).join("")}</div>`;
+document.getElementById("modalSave").onclick=async()=>{let st=document.getElementById("pd_start").value;if(!st){alert("Informe a data de início.");return}let c=st;p.stages.forEach((s,i)=>{if(s.status==="Concluída"){if(s.end)c=s.end;return}let a=c,b=addWork(c,Math.max(0,+document.getElementById("pd_"+i).value||0));if(s.plannedEnd&&s.plannedEnd!==b)(s.replans=s.replans||[]).push({date:new Date().toISOString(),from:s.plannedEnd,to:b,reason:"Recálculo geral do cronograma"});s.plannedStart=a;s.plannedEnd=b;c=b});if(!p.due){p.due=c;p.dueOriginal=c}addEvent(p,"Prazos das etapas planejados",`Início em ${fmt(st)}; término previsto do cronograma em ${fmt(c)}.`);await save(p);closeModal();renderProject()};document.getElementById("modal").classList.add("show")}
+function lastBackup(){try{return localStorage.getItem("hitech_last_backup")||""}catch(e){return""}}
+function backupNotice(){let l=lastBackup(),d=l?Math.floor((Date.now()-new Date(l))/864e5):null;if(!projects.length&&!l)return `<div class="notice blue">Os projetos e anexos ficam sincronizados na nuvem. Faça backups regulares na aba <b>Backup</b>.</div>`;
+return d===null||d>7?`<div class="notice"><b>Backup pendente:</b> ${d===null?"nenhum backup foi feito ainda":"o último foi há "+d+" dias"}. Os dados ficam na nuvem. <button class="btn small" onclick="exportBackup()">⇩ Fazer backup agora</button></div>`:`<div class="notice blue">Último backup em ${new Date(l).toLocaleDateString("pt-BR")}. Os dados ficam na nuvem; mantenha backups regulares.</div>`}
+async function exportBackup(){try{projects=await allProjects();setSync("Preparando backup...");const complete=[];for(const p of projects)complete.push(await expandFilesForBackup(p));let data={app:"hitech_dev_products",version:2,exportedAt:new Date().toISOString(),projects:complete},a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:"application/json"}));a.download="hitech_backup_"+dateNow()+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);try{localStorage.setItem("hitech_last_backup",data.exportedAt)}catch(e){}setSync("Backup concluído");let pg=document.querySelector(".nav button.active")?.dataset.page;if(pg==="backup")renderBackup();if(pg==="dashboard")renderDashboard()}catch(e){setSync("Erro no backup",true);alert("Não foi possível gerar o backup completo: "+e.message)}}
+async function putMany(list){for(const p of list){await migrateLegacyFiles(p,p.id);const {error}=await supabaseClient.from("projects").upsert({id:p.id,data:p,updated_at:p.updated||new Date().toISOString()},{onConflict:"id"});if(error)throw error}}
+function importBackup(input){let f=input.files[0];input.value="";if(!f)return;let r=new FileReader();r.onload=async()=>{let d;try{d=JSON.parse(r.result)}catch(e){alert("Arquivo inválido: não é um backup em formato JSON.");return}
+if(d.app!=="hitech_dev_products"||!Array.isArray(d.projects)){alert("Este arquivo não é um backup do sistema HiTech.");return}
+let m=new Map((await allProjects()).map(p=>[p.id,p])),add=[],nw=0,up=0,keep=0;d.projects.forEach(p=>{if(!p||!p.id)return;let o=m.get(p.id);if(!o){add.push(p);nw++}else if((p.updated||"")>(o.updated||"")){add.push(p);up++}else keep++});
+if(!confirm(`Backup de ${new Date(d.exportedAt).toLocaleDateString("pt-BR")} com ${d.projects.length} projeto(s).\n\n• Novos: ${nw}\n• Atualizados (backup mais recente): ${up}\n• Mantidos (local igual ou mais recente): ${keep}\n\nNada será apagado. Importar?`))return;
+try{await putMany(add);projects=await allProjects();renderBackup();alert("Importação concluída: "+add.length+" projeto(s) importado(s). ")}catch(e){alert("Falha ao importar o backup: "+e.message)}};r.readAsText(f)}
+function renderBackup(){document.getElementById("crumb").textContent="Backup";let l=lastBackup(),sz=projects.reduce((n,p)=>n+JSON.stringify(p).length,0);
+document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Segurança dos dados</div><h1>Backup e restauração</h1><p class="sub">Projetos e anexos ficam sincronizados na nuvem. O backup gera um arquivo completo para guardar em local seguro.</p></div></div>${backupNotice()}
+<div class="grid"><div class="panel"><div class="panelhead"><h2>Exportar backup</h2></div><div class="panelbody"><p>Gera um arquivo <b>.json</b> com todos os projetos, etapas, prazos, aprovações, histórico e anexos. Os anexos são incluídos no arquivo.</p><p class="muted">${projects.length} projeto(s) · cerca de ${(sz/1048576).toFixed(1)} MB · último backup: ${l?new Date(l).toLocaleString("pt-BR"):"nunca"}</p><button class="btn primary" onclick="exportBackup()">⇩ Baixar backup</button></div></div>
+<div class="panel"><div class="panelhead"><h2>Importar backup</h2></div><div class="panelbody"><p>Restaura projetos e anexos de um arquivo de backup. Nada é apagado: projetos novos entram, e os existentes só são atualizados se o backup for mais recente.</p><input type="file" accept=".json,application/json" onchange="importBackup(this)"></div></div></div>
+<div class="notice blue"><b>Boas práticas:</b> faça backup ao fim de cada semana e salve o arquivo em pasta de rede ou nuvem da empresa, não só neste computador. O arquivo contém todos os anexos, então trate-o como documento confidencial. A sincronização entre usuários ocorre pelo Supabase. O backup é uma cópia adicional de segurança.</div>`}
+function toggleStage(i){document.getElementById("stagebody_"+i).classList.toggle("hidden")}
+async function saveStage(i){let p=getP(),s=p.stages[i],g=id=>document.getElementById(id+i).value;
+let np=g("s_pend_"),t={plannedEnd:np,status:g("s_status_"),end:g("s_end_")};if(t.status==="Concluída"&&!t.end)t.end=dateNow();
+if(stageDelay(t)&&!g("s_cause_")&&!confirm("Esta etapa está em atraso e o motivo não foi informado. Salvar mesmo assim?"))return;
+let oldEnd=s.plannedEnd||"";if(oldEnd&&np&&np!==oldEnd){let r=prompt(`O prazo desta etapa mudou de ${fmt(oldEnd)} para ${fmt(np)}. Informe o motivo do replanejamento:`);if(!r||!r.trim())return;(s.replans=s.replans||[]).push({date:new Date().toISOString(),from:oldEnd,to:np,reason:r.trim()});addEvent(p,"Prazo de etapa replanejado",`${s.number} – ${s.name}: ${fmt(oldEnd)} → ${fmt(np)}. Motivo: ${r.trim()}`)}
+s.plannedStart=g("s_pstart_");s.plannedEnd=np;s.delayCause=g("s_cause_");s.delayNote=g("s_dnote_");s.responsible=document.getElementById("s_owner_"+i).value;s.start=document.getElementById("s_start_"+i).value;s.end=document.getElementById("s_end_"+i).value;s.status=document.getElementById("s_status_"+i).value;s.notes=document.getElementById("s_notes_"+i).value;if(s.status==="Concluída"&&!s.end)s.end=dateNow();if(s.status==="Em andamento"&&!s.start)s.start=dateNow();s.checks=s.checks.map((c,j)=>({...c,done:document.getElementById(`s_check_${i}_${j}`).checked}));let f=await filesFrom(document.getElementById("s_files_"+i),s.name);s.files=[...(s.files||[]),...f];p.updated=new Date().toISOString();addEvent(p,"Etapa atualizada",`${s.number} – ${s.name}: ${s.status}`);await save(p);renderProjectTab()}
+function simpleRecordHTML(p,key,title,fields,desc){let rec=p[key]||[];return `<div class="panel"><div class="panelhead"><h2>${title}</h2><button class="btn primary small" onclick="addSimpleRecord('${key}')">＋ Novo registro</button></div><div class="panelbody"><div class="notice">${desc}</div>${rec.length?rec.map((r,i)=>`<div class="stage"><div class="stagehead"><strong>${esc(r.title||r.values[0]||"Registro "+(i+1))}</strong><button class="btn small" onclick="viewSimple('${key}',${i})">Ver registro</button></div><small class="muted">${fmt(r.date||"")} · ${esc(r.owner||"")}</small></div>`).join(""):`<div class="empty">Nenhum registro cadastrado.</div>`}</div></div>`}
+function addSimpleRecord(key){let title=key==="suppliers"?"Novo desenvolvimento de fornecedor":"Nova avaliação ambiental";let fields=key==="suppliers"?["Fornecedor","Insumo","Data de início","Data de solicitação da amostra","Data de recebimento da amostra","Responsável","Resultado / conclusão"]:["Matéria-prima / insumo","Impacto identificado","Alternativas avaliadas","Melhoria / justificativa","Responsável","Data da avaliação","Conclusão"];document.getElementById("modalTitle").textContent=title;document.getElementById("modalBody").innerHTML=`<div class="grid">${fields.map((f,i)=>`<div class="field ${i===fields.length-1?"full":""}"><label>${f}</label><input id="simple_${i}" ${f.toLowerCase().includes("data")?'type="date"':""}></div>`).join("")}<div class="field full"><label>Descrição / observações</label><textarea id="simple_notes"></textarea></div><div class="field full"><label>Evidências</label><input type="file" id="simple_files" multiple></div></div>`;document.getElementById("modalSave").onclick=async()=>{let p=getP(),values=fields.map((f,i)=>document.getElementById("simple_"+i).value),files=await filesFrom(document.getElementById("simple_files"),title);p[key]=p[key]||[];p[key].push({title:values[0],values,fields,date:dateNow(),owner:values.find((v,i)=>fields[i].toLowerCase().includes("responsável"))||"",notes:document.getElementById("simple_notes").value,files});addEvent(p,title,"Registro incluído");await save(p);closeModal();renderProjectTab()};document.getElementById("modal").classList.add("show")}
+function viewSimple(key,i){let r=getP()[key][i];alert(r.fields.map((f,j)=>f+": "+(r.values[j]||"—")).join("\n")+"\n\n"+(r.notes||""))}
+function approvalsHTML(p){let a=p.approvals||[];return `<div class="panel"><div class="panelhead"><h2>Registro de aprovações</h2><button class="btn primary small" onclick="addApproval()">＋ Registrar aprovação</button></div><div class="panelbody"><div class="notice">As aprovações devem respeitar as responsabilidades do PG-8.03. O sistema registra evidências e decisões, mas não altera a autoridade de aprovação definida no procedimento.</div>${a.length?a.map(x=>`<div class="stage"><div class="stagehead"><strong>${esc(x.kind)}</strong>${statusBadge(x.decision)}</div><p class="muted">${esc(x.approver)} · ${fmt(x.date)} · ${esc(x.role)}</p><p>${esc(x.comment||"")}</p>${fileList(x.files||[])}</div>`).join(""):`<div class="empty">Nenhuma aprovação registrada.</div>`}</div></div>`}
+function addApproval(){document.getElementById("modalTitle").textContent="Registrar aprovação";document.getElementById("modalBody").innerHTML=`<div class="grid"><div class="field"><label>Tipo de aprovação</label><select id="a_kind"><option>Conclusão do projeto</option><option>Desenvolvimento de produto</option><option>Desenvolvimento de processo</option><option>Produto com novo processo</option><option>Categoria D1</option><option>Lote piloto – Recebimento</option><option>Lote piloto – Qualidade</option><option>Liberação para produção</option></select></div><div class="field"><label>Decisão</label><select id="a_decision"><option>Aprovado</option><option>Reprovado</option><option>Aguardando aprovação</option></select></div><div class="field"><label>Aprovador</label><input id="a_approver"></div><div class="field"><label>Função / área</label><input id="a_role"></div><div class="field"><label>Data</label><input id="a_date" type="date" value="${dateNow()}"></div><div class="field full"><label>Comentário / justificativa</label><textarea id="a_comment"></textarea></div><div class="field full"><label>Evidência da aprovação</label><input type="file" id="a_files" multiple></div></div>`;document.getElementById("modalSave").onclick=async()=>{let p=getP(),files=await filesFrom(document.getElementById("a_files"),"Aprovação");p.approvals=p.approvals||[];let x={kind:document.getElementById("a_kind").value,decision:document.getElementById("a_decision").value,approver:document.getElementById("a_approver").value,role:document.getElementById("a_role").value,date:document.getElementById("a_date").value,comment:document.getElementById("a_comment").value,files};p.approvals.push(x);addEvent(p,"Aprovação registrada",`${x.kind}: ${x.decision} – ${x.approver}`);if(x.kind==="Conclusão do projeto"&&x.decision==="Aprovado")p.status="Concluído";if(x.decision==="Reprovado")p.status="Reprovado";await save(p);closeModal();renderProjectTab()};document.getElementById("modal").classList.add("show")}
+function evidenceHTML(p){let all=[...(p.generalFiles||[])];(p.stages||[]).forEach(s=>(s.files||[]).forEach(f=>all.push(f)));Object.values(p.planning||{}).forEach(x=>(x.files||[]).forEach(f=>all.push(f)));["suppliers","environment","approvals"].forEach(k=>(p[k]||[]).forEach(r=>(r.files||[]).forEach(f=>all.push(f))));return `<div class="panel"><div class="panelhead"><h2>Central de evidências</h2><span class="badge blue">${all.length} arquivo(s)</span></div><div class="panelbody"><div class="notice blue">Os arquivos ficam no armazenamento privado da HiTech e são vinculados ao projeto e à etapa correspondente.</div>${fileList(all,true)}</div></div>`}
+function fileList(files,download=false){if(!files||!files.length)return `<p class="muted" style="font-size:11px">Nenhuma evidência anexada.</p>`;return `<div class="filelist">${files.map((f,i)=>`<div class="fileitem"><span>📎 ${esc(f.name)} <small class="muted">· ${esc(f.stage||"")}</small></span>${f.data?`<a class="btn small" href="${f.data}" download="${esc(f.name)}">Abrir / baixar</a>`:f.path?`<button class="btn small" onclick="downloadEvidence('${esc(f.path)}')">Abrir / baixar</button>`:""}</div>`).join("")}</div>`}
+function historyHTML(p){return `<div class="panel"><div class="panelhead"><h2>Histórico cronológico do projeto</h2><span class="badge">${(p.events||[]).length} movimentações</span></div><div class="panelbody">${timelineHTML((p.events||[]).slice().reverse())}</div></div>`}
+function timelineHTML(events){if(!events.length)return `<div class="empty">Ainda não há movimentações registradas.</div>`;return `<div class="timeline">${events.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><p>${new Date(e.date).toLocaleString("pt-BR")} · ${esc(e.detail||"")}</p></div>`).join("")}</div>`}
+function renderGlobalTimeline(){document.getElementById("crumb").textContent="Histórico geral";let ev=projects.flatMap(p=>(p.events||[]).map(e=>({...e,project:p.name,code:p.code}))).sort((a,b)=>b.date.localeCompare(a.date));document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Rastreabilidade</div><h1>Histórico geral</h1><p class="sub">Movimentações registradas nos projetos cadastrados.</p></div></div><div class="panel"><div class="panelbody">${ev.length?`<div class="timeline">${ev.map(e=>`<div class="event"><strong>${esc(e.title)} · ${esc(e.project)}</strong><p>${new Date(e.date).toLocaleString("pt-BR")} · ${esc(e.detail||"")}</p></div>`).join("")}</div>`:`<div class="empty">Nenhuma movimentação registrada.</div>`}</div></div>`}
+function addEvent(p,title,detail){p.events=p.events||[];p.events.push({date:new Date().toISOString(),title,detail});p.updated=new Date().toISOString()}
+function editProject(){let p=getP();document.getElementById("modalTitle").textContent="Editar dados básicos";document.getElementById("modalBody").innerHTML=`<div class="grid"><div class="field"><label>Nome do projeto</label><input id="e_name" value="${esc(p.name)}"></div><div class="field"><label>Código</label><input id="e_code" value="${esc(p.code)}"></div><div class="field"><label>Responsável</label><input id="e_owner" value="${esc(p.owner)}"></div><div class="field"><label>Prazo</label><input id="e_due" type="date" value="${esc(p.due)}"></div><div class="field full"><label>Motivo da alteração do prazo</label><input id="e_dueReason" placeholder="Obrigatório se o prazo for alterado"></div><div class="field"><label>Status geral</label><select id="e_status">${["Em andamento","Aguardando aprovação","Concluído","Reprovado","Suspenso"].map(x=>`<option ${p.status===x?"selected":""}>${x}</option>`).join("")}</select></div></div>`;document.getElementById("modalSave").onclick=async()=>{p.name=document.getElementById("e_name").value;p.code=document.getElementById("e_code").value;p.owner=document.getElementById("e_owner").value;let nd=document.getElementById("e_due").value,rs=document.getElementById("e_dueReason").value.trim();if(p.due&&nd!==p.due){if(!rs){alert("Informe o motivo da alteração do prazo.");return}(p.dueHistory=p.dueHistory||[]).push({date:new Date().toISOString(),from:p.due,to:nd,reason:rs});addEvent(p,"Prazo do projeto alterado",`${fmt(p.due)} → ${fmt(nd)}. Motivo: ${rs}`)}if(!p.dueOriginal&&(p.due||nd))p.dueOriginal=p.due||nd;p.due=nd;p.status=document.getElementById("e_status").value;addEvent(p,"Dados básicos atualizados","Nome, código, responsável, prazo ou status alterado.");await save(p);closeModal();renderProject()};document.getElementById("modal").classList.add("show")}
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+load().catch(e=>{setSync("Erro de conexão",true);showAuth("Falha ao iniciar o sistema: "+e.message)});
 </script>
-</body>
-</html>
