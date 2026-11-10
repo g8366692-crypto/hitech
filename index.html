@@ -75,7 +75,23 @@ async function logout(){if(realtimeChannel)await supabaseClient.removeChannel(re
 async function initSupabase(){if(!window.supabase||!window.HITECH_SUPABASE_CONFIG?.url||!window.HITECH_SUPABASE_CONFIG?.anonKey){showAuth("Configuração ausente. Preencha o arquivo config.js com a URL e a chave pública do projeto Supabase.");document.getElementById("authLogin").disabled=true;return}supabaseClient=window.supabase.createClient(window.HITECH_SUPABASE_CONFIG.url,window.HITECH_SUPABASE_CONFIG.anonKey);document.getElementById("authLogin").addEventListener("click",signIn);document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key==="Enter")signIn()});const {data:{session}}=await supabaseClient.auth.getSession();if(session){currentUser=session.user;await startWorkspace()}else showAuth() ;supabaseClient.auth.onAuthStateChange(async(event,session)=>{if(event==="SIGNED_OUT"){currentUser=null;projects=[];showAuth()}})}
 async function startWorkspace(){hideAuth();document.getElementById("userEmail").textContent=currentUser.email||"Usuário";setSync("Sincronizando...");try{projects=await allProjects();renderDashboard();if(realtimeChannel)await supabaseClient.removeChannel(realtimeChannel);realtimeChannel=supabaseClient.channel("hitech-projects-sync").on("postgres_changes",{event:"*",schema:"public",table:"projects"},async()=>{try{projects=await allProjects();const page=document.querySelector(".nav button.active")?.dataset.page;if(currentId&&projects.some(p=>p.id===currentId)){if(page===undefined)renderProject();else if(page==="dashboard")renderDashboard();else if(page==="projects")renderProjects();else if(page==="timeline")renderGlobalTimeline();else if(page==="backup")renderBackup();else renderProject()}}catch(e){console.error(e)}}).subscribe();setSync("Sincronizado")}catch(e){setSync("Falha na sincronização",true);alert("Não foi possível carregar os projetos do Supabase: "+e.message)}}
 async function load(){await initSupabase()}
-async function allProjects(){const {data,error}=await supabaseClient.from("projects").select("id,data,updated_at").order("updated_at",{ascending:false});if(error)throw error;return (data||[]).map(row=>({...row.data,id:row.id,updated:row.data?.updated||row.updated_at,_serverUpdatedAt:row.updated_at}))}
+async function allProjects(){
+ const {data,error}=await supabaseClient
+  .from("projects")
+  .select("id,data,updated_at")
+  .order("updated_at",{ascending:false});
+
+ if(error)throw error;
+
+ return (data||[]).map(row=>({
+  ...row.data,
+  projectRef:row.data?.projectRef ||
+   (String(row.data?.id||"").startsWith("PRJ-")?row.data.id:undefined),
+  id:row.id,
+  updated:row.data?.updated||row.updated_at,
+  _serverUpdatedAt:row.updated_at
+ }));
+}
 async function save(p){const expected=p._serverUpdatedAt;p.updated=new Date().toISOString();const payload={...p};delete payload._serverUpdatedAt;setSync("Salvando...");let result;if(expected){result=await supabaseClient.from("projects").update({data:payload,updated_at:p.updated}).eq("id",p.id).eq("updated_at",expected).select("id")}else{result=await supabaseClient.from("projects").insert({id:p.id,data:payload,updated_at:p.updated}).select("id")}if(result.error){setSync("Erro ao salvar",true);throw result.error}if(!result.data?.length){projects=await allProjects();setSync("Conflito de edição",true);alert("Este projeto foi alterado por outra pessoa enquanto você estava editando. Recarreguei a versão mais recente para evitar sobrescrever as alterações. Confira os dados e refaça sua edição, se necessário.");if(currentId===p.id)renderProject();return false}projects=await allProjects();setSync("Sincronizado");return p}
 function getP(){return projects.find(p=>p.id===currentId)}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
