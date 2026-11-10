@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HiTech | Gestão de Desenvolvimento</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f3f6;color:#263445}
+header{background:#10283f;color:white;padding:22px 30px;display:flex;justify-content:space-between;align-items:center}
+header h1{margin:0;font-size:23px}
+header small{color:#cbd5df}
+main{max-width:1200px;margin:30px auto;padding:0 20px}
+.panel{background:white;border-radius:10px;padding:25px;margin-bottom:22px;box-shadow:0 2px 10px #0000000b}
+h2{color:#10283f;margin-top:0}
+label{display:block;font-weight:bold;margin:13px 0 6px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d3dbe3;border-radius:6px;font-size:14px}
+textarea{min-height:90px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+button{background:#f47721;color:white;border:0;padding:12px 20px;border-radius:6px;cursor:pointer;font-weight:bold}
+button:hover{opacity:.9}
+.secondary{background:#526579}
+.hidden{display:none!important}
+#message{padding:12px;background:#e8eff5;border-radius:6px;margin-bottom:15px}
+.project{border:1px solid #dce2e8;border-radius:8px;padding:18px;margin-top:13px}
+.project h3{margin:0 0 10px;color:#10283f}
+.tag{background:#fff0e5;color:#a84b0b;padding:5px 9px;border-radius:20px;font-size:12px}
+.muted{color:#738092;font-size:13px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}header{padding:18px;gap:10px}}
+</style>
+</head>
+<body>
+
+<header>
+ <div>
+  <h1>HiTech | Desenvolvimento</h1>
+  <small>Gestão e acompanhamento de projetos</small>
+ </div>
+ <button id="logout" class="secondary hidden" onclick="sair()">Sair</button>
+</header>
+
+<main>
+ <div id="message">Inicializando sistema...</div>
+
+ <section id="login" class="panel hidden">
+  <h2>Acesso ao sistema</h2>
+  <label>E-mail</label>
+  <input id="email" type="email" placeholder="seu@email.com">
+  <label>Senha</label>
+  <input id="password" type="password" placeholder="Sua senha">
+  <br><br>
+  <button onclick="entrar()">Entrar</button>
+ </section>
+
+ <div id="sistema" class="hidden">
+  <section class="panel">
+   <h2>Novo desenvolvimento</h2>
+   <div class="grid">
+    <div>
+     <label>Nome do projeto *</label>
+     <input id="nome" placeholder="Ex.: Prime Clean Flex">
+    </div>
+    <div>
+     <label>Solicitante</label>
+     <input id="solicitante" placeholder="Quem solicitou o desenvolvimento?">
+    </div>
+    <div>
+     <label>Responsável</label>
+     <input id="responsavel" placeholder="Responsável pelo projeto">
+    </div>
+    <div>
+     <label>Data de início</label>
+     <input id="inicio" type="date">
+    </div>
+    <div>
+     <label>Prazo previsto</label>
+     <input id="prazo" type="date">
+    </div>
+    <div>
+     <label>Status</label>
+     <select id="status">
+      <option>Em planejamento</option>
+      <option>Em desenvolvimento</option>
+      <option>Em testes</option>
+      <option>Aguardando aprovação</option>
+      <option>Concluído</option>
+      <option>Cancelado</option>
+     </select>
+    </div>
+    <div>
+     <label>Prioridade</label>
+     <select id="prioridade">
+      <option>Normal</option>
+      <option>Alta</option>
+      <option>Urgente</option>
+      <option>Baixa</option>
+     </select>
+    </div>
+   </div>
+
+   <label>Origem da necessidade</label>
+   <textarea id="origem" placeholder="Descreva como surgiu a necessidade, quem solicitou e qual problema será resolvido."></textarea>
+
+   <label>Objetivo do desenvolvimento</label>
+   <textarea id="objetivo" placeholder="Descreva o que se espera alcançar."></textarea>
+
+   <label>Histórico e observações iniciais</label>
+   <textarea id="historico" placeholder="Reuniões, decisões, recebimento de materiais, testes e outras informações."></textarea>
+
+   <br><br>
+   <button onclick="salvarProjeto()">Salvar desenvolvimento</button>
+  </section>
+
+  <section class="panel">
+   <h2>Projetos cadastrados</h2>
+   <div id="lista"></div>
+  </section>
+ </div>
+</main>
+
+<script>
+let db;
+
+function mensagem(texto){
+ document.getElementById("message").textContent=texto;
+}
+
+async function iniciar(){
+ if(!window.HITECH_CONFIG ||
+    !window.HITECH_CONFIG.SUPABASE_URL ||
+    !window.HITECH_CONFIG.SUPABASE_ANON_KEY){
+   mensagem("Configuração do Supabase pendente. Precisamos criar config.js.");
+   document.getElementById("login").classList.remove("hidden");
+   return;
+ }
+
+ db=window.supabase.createClient(
+  window.HITECH_CONFIG.SUPABASE_URL,
+  window.HITECH_CONFIG.SUPABASE_ANON_KEY
+ );
+
+ const {data}=await db.auth.getSession();
+ atualizarTela(data.session);
+
+ db.auth.onAuthStateChange((evento,session)=>{
+  atualizarTela(session);
+ });
+
+ if(data.session) carregarProjetos();
+}
+
+function atualizarTela(session){
+ document.getElementById("login").classList.toggle("hidden",!!session);
+ document.getElementById("sistema").classList.toggle("hidden",!session);
+ document.getElementById("logout").classList.toggle("hidden",!session);
+ mensagem(session?"Acesso autorizado ao sistema HiTech.":"Entre com seu usuário para acessar o sistema.");
+}
+
+async function entrar(){
+ const email=document.getElementById("email").value;
+ const password=document.getElementById("password").value;
+
+ const {error}=await db.auth.signInWithPassword({email,password});
+
+ if(error) mensagem("Erro no acesso: "+error.message);
+}
+
+async function sair(){
+ await db.auth.signOut();
+}
+
+async function salvarProjeto(){
+ const nome=document.getElementById("nome").value.trim();
+
+ if(!nome){
+  mensagem("Informe o nome do projeto.");
+  return;
+ }
+
+ const projeto={
+  name:nome,
+  requester:document.getElementById("solicitante").value,
+  owner:document.getElementById("responsavel").value,
+  start_date:document.getElementById("inicio").value||null,
+  due_date:document.getElementById("prazo").value||null,
+  status:document.getElementById("status").value,
+  priority:document.getElementById("prioridade").value,
+  origin:document.getElementById("origem").value,
+  objective:document.getElementById("objetivo").value,
+  history:document.getElementById("historico").value
+ };
+
+ const {error}=await db.from("developments").insert(projeto);
+
+ if(error){
+  mensagem("Não foi possível salvar: "+error.message);
+  return;
+ }
+
+ mensagem("Desenvolvimento cadastrado com sucesso!");
+
+ document.querySelectorAll("#sistema input,#sistema textarea").forEach(el=>el.value="");
+
+ carregarProjetos();
+}
+
+async function carregarProjetos(){
+ const {data,error}=await db
+  .from("developments")
+  .select("*")
+  .order("created_at",{ascending:false});
+
+ if(error){
+  mensagem("Erro ao carregar projetos: "+error.message);
+  return;
+ }
+
+ const lista=document.getElementById("lista");
+ lista.innerHTML="";
+
+ if(!data.length){
+  lista.textContent="Nenhum projeto cadastrado.";
+  return;
+ }
+
+ data.forEach(p=>{
+  const card=document.createElement("div");
+  card.className="project";
+
+  const titulo=document.createElement("h3");
+  titulo.textContent=p.name;
+
+  const tag=document.createElement("span");
+  tag.className="tag";
+  tag.textContent=p.status;
+
+  const detalhes=document.createElement("p");
+  detalhes.textContent="Responsável: "+(p.owner||"Não informado")+
+   " | Solicitante: "+(p.requester||"Não informado");
+
+  const prazo=document.createElement("p");
+  prazo.textContent="Início: "+(p.start_date||"Não definido")+
+   " | Prazo: "+(p.due_date||"Não definido");
+
+  const origem=document.createElement("p");
+  origem.textContent="Origem: "+(p.origin||"Não informada");
+
+  const objetivo=document.createElement("p");
+  objetivo.textContent="Objetivo: "+(p.objective||"Não informado");
+
+  card.append(titulo,tag,detalhes,prazo,origem,objetivo);
+  lista.appendChild(card);
+ });
+}
+
+iniciar();
+</script>
+</body>
+</html>
