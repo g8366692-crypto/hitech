@@ -52,6 +52,38 @@ input,select,textarea{font-size:16px!important}
 .field textarea{min-height:200px}
 .detailhead h2{font-size:20px}
 }
+
+/* ===== Legibilidade um pouco maior + logo vermelho ===== */
+.brandmark{background:#d9202a;color:#fff}
+.brand small{font-size:12.5px}
+.navlabel{font-size:11.5px}
+.nav button{font-size:15px}
+.sidebar-foot{font-size:12.5px}
+.crumb{font-size:14.5px}
+.syncstate{font-size:12px}
+#userEmail{font-size:13.5px!important}
+.eyebrow{font-size:12px}
+.sub{font-size:15.5px}
+.stat .label{font-size:14px}
+.stat .num{font-size:30px}
+.stat .hint{font-size:12.5px}
+th{font-size:12px}
+th,td{font-size:14px}
+.badge{font-size:12px;padding:4px 9px}
+.btn{font-size:14.5px}
+.btn.small{font-size:13.5px}
+.field label{font-size:13.5px}
+.field small{font-size:12.5px}
+.notice{font-size:13.5px}
+
+/* ===== Menu do projeto: só Planejamento e Cronograma em destaque ===== */
+.projectnav .group{background:transparent;border-left:0;border-radius:0;color:#8a99a8;font-size:11.5px;font-weight:600;letter-spacing:.9px;padding:14px 12px 4px;margin:6px 0 0}
+.projectnav button{font-weight:400;color:#526273}
+.projectnav button:hover,.projectnav button.active{background:transparent;color:#526273;font-weight:400}
+@media(hover:hover){.projectnav button:hover{background:#f1f4f7}}
+.projectnav button.active{background:#fff2e9;color:#a84d0b;font-weight:750}
+.projectnav button.keytab{background:#eaf1f8;color:#10243a;font-weight:800;border-left:4px solid #d9202a}
+.projectnav button.keytab.active{background:#fff2e9;color:#a84d0b}
 </style>
 </head>
 <body>
@@ -153,7 +185,7 @@ const DEFAULT_DAYS=[5,10,5,5,15,20,10,5,3,3,5,15,20,3,3,15,3,10,7,3,2,2,30];
 const DELAY_CAUSES=["Aguardando fornecedor ou amostra","Aguardando terceiro (gráfica, laboratório, certificadora)","Aguardando aprovação interna","Retrabalho ou reprovação técnica","Mudança de escopo ou requisito","Prioridade ou falta de recurso","Outro"];
 function dayDiff(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5)}
 function addWork(d,n){let x=new Date(d+"T12:00:00");while(n>0){x.setDate(x.getDate()+1);if(x.getDay()%6)n--}return x.toISOString().slice(0,10)}
-function stageDelay(s){if(!s.plannedEnd||s.status==="Suspensa")return null;if(s.status==="Concluída"){let d=s.end?dayDiff(s.plannedEnd,s.end):0;return d>0?{kind:"done",days:d}:null}let d=dayDiff(s.plannedEnd,dateNow());return d>0?{kind:"open",days:d}:null}
+function stageDelay(s){if(!s.plannedEnd||s.status==="Suspensa")return null;if(s.status==="Concluída"){if(!s.delayCause)return null;let d=s.end?dayDiff(s.plannedEnd,s.end):0;return d>0?{kind:"done",days:d}:null}let d=dayDiff(s.plannedEnd,dateNow());return d>0?{kind:"open",days:d}:null}
 function stageSoon(s){if(!s.plannedEnd||s.status==="Concluída"||s.status==="Suspensa")return false;let d=dayDiff(dateNow(),s.plannedEnd);return d>=0&&d<=3}
 function delayBadge(s){let d=stageDelay(s);if(d)return `<span class="badge red">${d.kind==="open"?"Atrasada "+d.days+"d":"Concluída com "+d.days+"d de atraso"}</span>`;if(stageSoon(s)){let n=dayDiff(dateNow(),s.plannedEnd);return `<span class="badge orange">${n?"Vence em "+n+"d":"Vence hoje"}</span>`}return ""}
 function health(p){if(["Concluído","Reprovado","Suspenso"].includes(p.status))return{k:"none"};let n=(p.stages||[]).filter(s=>stageDelay(s)?.kind==="open").length,t=dateNow();if(p.due&&p.due<t)return{k:"late",n,days:dayDiff(p.due,t)};if(n)return{k:"risk",n};if(p.due&&dayDiff(t,p.due)<=7)return{k:"soon",days:dayDiff(t,p.due)};return{k:"ok"}}
@@ -221,7 +253,7 @@ p.generalFiles=await filesFrom(document.getElementById("f_files"),"Abertura do p
 function openProject(id){currentId=id;currentTab="overview";renderProject()}
 function renderProject(){window.__inProject=true;let p=getP();if(!p){window.__inProject=false;return showPage("projects")}document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["identification","Identificação"],["planning","Planejamento F-8.03.01"],["stages","Cronograma – 23 etapas"],["suppliers","Fornecedores"],["environment","Análise ambiental"],["approvals","Aprovações"],["evidence","Evidências"],["history","Histórico"]];
 document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Projeto ${esc(p.projectRef||p.id)}</div><h1>${esc(p.name)}</h1><p class="sub">${esc(p.code||"Sem código")} · Tipo ${esc(p.type)} · Criado em ${fmt(p.created)}</p></div><div class="toolbar"><button class="btn" onclick="showPage('projects')">← Projetos</button><button class="btn primary" onclick="editProject()">Editar dados</button><button class="btn danger" onclick="deleteProject('${p.id}')">🗑 Excluir projeto</button></div></div>
-<div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===2||i===4||i===6?`<div class="group">${i===0?"Projeto":i===2?"Planejamento":i===4?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
+<div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===2||i===4||i===6?`<div class="group">${i===0?"Projeto":i===2?"Planejamento":i===4?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}${t[0]==="planning"||t[0]==="stages"?" keytab":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
 renderProjectTab()}
 function setTab(t){currentTab=t;renderProject()}
 function renderProjectTab(){let p=getP(),el=document.getElementById("projectContent");if(!p||!el)return;
@@ -235,11 +267,11 @@ if(currentTab==="approvals")el.innerHTML=approvalsHTML(p);
 if(currentTab==="evidence")el.innerHTML=evidenceHTML(p);
 if(currentTab==="history")el.innerHTML=historyHTML(p);
 }
-async function savePhase(){const p=getP();if(!p)return;const title=document.getElementById("phase_title").value.trim(),notes=document.getElementById("phase_notes").value.trim();
-p.currentPhase=title;p.phaseNotes=notes;p.phaseUpdated=new Date().toISOString();addEvent(p,"Fase atual atualizada",title||"(fase limpa)");
+async function savePhase(){const p=getP();if(!p)return;const title=document.getElementById("phase_title").value.trim();
+p.currentPhase=title;p.phaseUpdated=new Date().toISOString();addEvent(p,"Fase atual atualizada",title||"(fase limpa)");
 try{const r=await save(p);if(r)renderProjectTab()}catch(e){console.error(e);alert("Não foi possível salvar a fase atual: "+(e.message||e));projects=await allProjects();renderProjectTab()}}
 function overviewHTML(p){return `${deadlineSummary(p)}<div class="panel"><div class="panelbody"><div class="detailhead"><div><div class="eyebrow">Acompanhamento do projeto</div><h2>${esc(p.name)}</h2><p class="sub">Responsável: ${esc(p.owner)} · Solicitante: ${esc(p.requester)}</p></div>${statusBadge(p.status)}</div><div style="display:flex;justify-content:space-between;margin-top:22px;font-size:12px"><b>Progresso das 23 etapas</b><b>${progress(p)}%</b></div><div class="progress"><span style="width:${progress(p)}%"></span></div><div class="grid three" style="margin-top:20px"><div><small class="muted">Necessidade identificada</small><br><b>${fmt(p.needDate)}</b></div><div><small class="muted">Recebida pelo Desenvolvimento</small><br><b>${fmt(p.receivedDate)}</b></div><div><small class="muted">Prazo previsto</small><br><b>${fmt(p.due)}</b> ${healthBadge(p)}${p.dueOriginal&&p.dueOriginal!==p.due?`<br><small class="muted">Original: ${fmt(p.dueOriginal)}</small>`:""}</div></div></div></div>
-<div class="panel"><div class="panelhead"><h2>Fase atual do projeto</h2>${p.phaseUpdated?`<small class="muted">Atualizado em ${fmt(p.phaseUpdated.slice(0,10))}</small>`:""}</div><div class="panelbody"><div class="field"><label>Em que fase o projeto está?</label><input id="phase_title" value="${esc(p.currentPhase||"")}" placeholder="Ex.: Testes de bancada, aguardando amostra do fornecedor"></div><div class="field" style="margin-top:12px"><label>Detalhes da situação atual (opcional)</label><textarea id="phase_notes" placeholder="Descreva o que já foi feito, o que está pendente, quem está aguardando quem...">${esc(p.phaseNotes||"")}</textarea></div><button class="btn primary" style="margin-top:12px" onclick="savePhase()">Salvar fase atual</button></div></div>
+<div class="panel"><div class="panelhead"><h2>Fase atual do projeto</h2>${p.phaseUpdated?`<small class="muted">Atualizado em ${fmt(p.phaseUpdated.slice(0,10))}</small>`:""}</div><div class="panelbody"><div class="field"><label>Em que fase o projeto está?</label><input id="phase_title" value="${esc(p.currentPhase||"")}" placeholder="Ex.: Testes de bancada, aguardando amostra do fornecedor"></div><button class="btn primary" style="margin-top:12px" onclick="savePhase()">Salvar fase atual</button></div></div>
 <div class="grid"><div class="panel"><div class="panelhead"><h2>Origem da necessidade</h2></div><div class="panelbody"><b>${esc(p.origin)}</b><p>${esc(p.reason)}</p><small class="muted">Solicitado por ${esc(p.requester)} · ${esc(p.department||"Departamento não informado")}</small></div></div><div class="panel"><div class="panelhead"><h2>Próximas etapas</h2></div><div class="panelbody">${(p.stages||[]).filter(s=>s.status!=="Concluída").slice(0,4).map(s=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span>${s.number}. ${esc(s.name)}${s.plannedEnd?` <small class="muted">· até ${fmt(s.plannedEnd)}</small>`:""}</span><span>${delayBadge(s)} ${statusBadge(s.status)}</span></div>`).join("")||"Todas as etapas concluídas."}</div></div></div>
 <div class="panel"><div class="panelhead"><h2>Últimas movimentações</h2><button class="btn small" onclick="setTab('history')">Ver histórico</button></div><div class="panelbody">${timelineHTML(p.events.slice(-5).reverse())}</div></div>`}
 function identHTML(p){return `<div class="panel"><div class="panelhead"><h2>Identificação e origem da necessidade</h2>${statusBadge(p.status)}</div><div class="panelbody"><div class="grid"><div class="field"><label>Origem da necessidade</label><input value="${esc(p.origin)}" readonly></div><div class="field"><label>Tipo de desenvolvimento</label><input value="${esc(p.type)}" readonly></div><div class="field"><label>Data em que surgiu a necessidade</label><input value="${esc(p.needDate)}" readonly></div><div class="field"><label>Data de recebimento pelo Desenvolvimento</label><input value="${esc(p.receivedDate)}" readonly></div><div class="field"><label>Solicitante</label><input value="${esc(p.requester)}" readonly></div><div class="field"><label>Departamento</label><input value="${esc(p.department)}" readonly></div><div class="field"><label>Responsável pelo desenvolvimento</label><input value="${esc(p.owner)}" readonly></div><div class="field"><label>Prazo previsto</label><input value="${esc(p.due)}" readonly></div><div class="field full"><label>Descrição da necessidade / justificativa</label><textarea readonly>${esc(p.reason)}</textarea></div></div><div class="sectiontitle">Evidências da abertura</div>${fileList(p.generalFiles)}</div></div>`}
@@ -294,10 +326,10 @@ document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class
 <div class="notice blue"><b>Boas práticas:</b> faça backup ao fim de cada semana e salve o arquivo em pasta de rede ou nuvem da empresa, não só neste computador. O arquivo contém todos os anexos, então trate-o como documento confidencial. A sincronização entre usuários ocorre pelo Supabase. O backup é uma cópia adicional de segurança.</div>`}
 function toggleStage(i){document.getElementById("stagebody_"+i).classList.toggle("hidden")}
 async function saveStage(i){let p=getP(),s=p.stages[i],g=id=>document.getElementById(id+i).value;
-let np=g("s_pend_"),t={plannedEnd:np,status:g("s_status_"),end:s.end||""};if(t.status==="Concluída"&&!t.end)t.end=dateNow();
+let np=g("s_pend_"),t={plannedEnd:np,status:g("s_status_"),end:s.end||"",delayCause:g("s_cause_")};if(t.status==="Concluída"&&!t.end)t.end=dateNow();
 if(stageDelay(t)&&!g("s_cause_")&&!confirm("Esta etapa está em atraso e o motivo não foi informado. Salvar mesmo assim?"))return;
 let oldEnd=s.plannedEnd||"";if(oldEnd&&np&&np!==oldEnd){let r=prompt(`O prazo desta etapa mudou de ${fmt(oldEnd)} para ${fmt(np)}. Informe o motivo do replanejamento:`);if(!r||!r.trim())return;(s.replans=s.replans||[]).push({date:new Date().toISOString(),from:oldEnd,to:np,reason:r.trim()});addEvent(p,"Prazo de etapa replanejado",`${s.number} – ${s.name}: ${fmt(oldEnd)} → ${fmt(np)}. Motivo: ${r.trim()}`)}
-s.plannedStart=g("s_pstart_");s.plannedEnd=np;s.delayCause=g("s_cause_");s.delayNote=g("s_dnote_");s.responsible=document.getElementById("s_owner_"+i).value;s.status=document.getElementById("s_status_"+i).value;s.notes=document.getElementById("s_notes_"+i).value;if(s.status==="Concluída"){if(!s.end)s.end=dateNow()}else s.end="";if(s.status==="Em andamento"&&!s.start)s.start=dateNow();s.checks=s.checks.map((c,j)=>({...c,done:document.getElementById(`s_check_${i}_${j}`).checked}));let f=await filesFrom(document.getElementById("s_files_"+i),s.name);s.files=[...(s.files||[]),...f];p.updated=new Date().toISOString();addEvent(p,"Etapa atualizada",`${s.number} – ${s.name}: ${s.status}`);await save(p);renderProjectTab()}
+s.plannedStart=g("s_pstart_");s.plannedEnd=np;s.delayCause=g("s_cause_");s.delayNote=g("s_dnote_");s.responsible=document.getElementById("s_owner_"+i).value;s.status=document.getElementById("s_status_"+i).value;s.notes=document.getElementById("s_notes_"+i).value;if(s.status==="Concluída"){if(s.delayCause){if(!s.end)s.end=dateNow()}else{s.end=(np&&(!s.end||s.end>np))?np:(s.end||dateNow())}}else s.end="";if(s.status==="Em andamento"&&!s.start)s.start=dateNow();s.checks=s.checks.map((c,j)=>({...c,done:document.getElementById(`s_check_${i}_${j}`).checked}));let f=await filesFrom(document.getElementById("s_files_"+i),s.name);s.files=[...(s.files||[]),...f];p.updated=new Date().toISOString();addEvent(p,"Etapa atualizada",`${s.number} – ${s.name}: ${s.status}`);await save(p);renderProjectTab()}
 function simpleRecordHTML(p,key,title,fields,desc){let rec=p[key]||[];return `<div class="panel"><div class="panelhead"><h2>${title}</h2><button class="btn primary small" onclick="addSimpleRecord('${key}')">＋ Novo registro</button></div><div class="panelbody"><div class="notice">${desc}</div>${rec.length?rec.map((r,i)=>`<div class="stage"><div class="stagehead"><strong>${esc(r.title||r.values[0]||"Registro "+(i+1))}</strong><button class="btn small" onclick="viewSimple('${key}',${i})">Ver registro</button></div><small class="muted">${fmt(r.date||"")} · ${esc(r.owner||"")}</small></div>`).join(""):`<div class="empty">Nenhum registro cadastrado.</div>`}</div></div>`}
 function addSimpleRecord(key){let title=key==="suppliers"?"Novo desenvolvimento de fornecedor":"Nova avaliação ambiental";let fields=key==="suppliers"?["Fornecedor","Insumo","Data de início","Data de solicitação da amostra","Data de recebimento da amostra","Responsável","Resultado / conclusão"]:["Matéria-prima / insumo","Impacto identificado","Alternativas avaliadas","Melhoria / justificativa","Responsável","Data da avaliação","Conclusão"];document.getElementById("modalTitle").textContent=title;document.getElementById("modalBody").innerHTML=`<div class="grid">${fields.map((f,i)=>`<div class="field ${i===fields.length-1?"full":""}"><label>${f}</label><input id="simple_${i}" ${f.toLowerCase().includes("data")?'type="date"':""}></div>`).join("")}<div class="field full"><label>Descrição / observações</label><textarea id="simple_notes"></textarea></div><div class="field full"><label>Evidências</label><input type="file" id="simple_files" multiple></div></div>`;document.getElementById("modalSave").onclick=async()=>{let p=getP(),values=fields.map((f,i)=>document.getElementById("simple_"+i).value),files=await filesFrom(document.getElementById("simple_files"),title);p[key]=p[key]||[];p[key].push({title:values[0],values,fields,date:dateNow(),owner:values.find((v,i)=>fields[i].toLowerCase().includes("responsável"))||"",notes:document.getElementById("simple_notes").value,files});addEvent(p,title,"Registro incluído");await save(p);closeModal();renderProjectTab()};document.getElementById("modal").classList.add("show")}
 function viewSimple(key,i){let r=getP()[key][i];alert(r.fields.map((f,j)=>f+": "+(r.values[j]||"—")).join("\n")+"\n\n"+(r.notes||""))}
