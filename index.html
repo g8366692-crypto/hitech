@@ -1031,7 +1031,7 @@ const planningFields=[
 ["newprocess","5.8 Necessidade de novos processos","Registrar se haverá novo processo, justificativa, recursos, responsáveis e participação do Gerente de Planejamento e Novos Projetos."],
 ["external","5.9 Processos externos","Processos terceirizados, fornecedor, custos, disponibilidade e justificativa."]
 ];
-function planningHTML(p){return `<div class="panel"><div class="panelhead"><h2>Planejamento do projeto – F-8.03.01</h2><span class="badge blue">9 blocos de planejamento</span></div><div class="panelbody"><div class="notice blue">Preencha cada bloco e anexe os registros que comprovem as informações. Este módulo detalha os campos previstos no item 6.3 e nas entradas do item 6.4 do PG-8.03.</div>${planningFields.map(f=>{let d=p.planning?.[f[0]]||{};return `<div class="stage"><div class="stagehead"><strong>${f[1]}</strong>${d.updated?`<small>Atualizado em ${fmt(d.updated.slice(0,10))}</small>`:""}</div><p class="muted" style="font-size:11px">${f[2]}</p><div class="field"><label>Registro / descrição</label><textarea id="plan_${f[0]}" placeholder="Descreva as informações, datas, responsáveis, resultados e observações...">${esc(d.text||"")}</textarea></div><div class="grid" style="margin-top:10px"><div class="field"><label>Responsável pelo registro</label><input id="planowner_${f[0]}" value="${esc(d.owner||"")}" placeholder="Nome do responsável"></div><div class="field"><label>Data de realização</label><input id="plandate_${f[0]}" type="date" value="${esc(d.date||"")}"></div></div><div class="field" style="margin-top:10px"><label>Evidências</label><input type="file" multiple id="planfiles_${f[0]}"><div>${fileList(d.files||[])}</div></div><button class="btn small" style="margin-top:10px" onclick="savePlanning('${f[0]}')">Salvar bloco</button></div>`}).join("")}<div class="field"><label>Conclusão do planejamento</label><textarea id="plan_conclusion" placeholder="Registre a conclusão do planejamento e as condições para continuidade...">${esc(p.planning?.conclusion||"")}</textarea></div><div class="field" style="margin-top:10px"><label>Anexar evidências da conclusão</label><input type="file" multiple id="plan_conclusion_files"><small>Anexe a ata, aprovação, e-mails ou outros registros que comprovem a conclusão do planejamento.</small><div>${fileList(p.planning?.conclusionFiles||[])}</div></div><button class="btn primary" style="margin-top:10px" onclick="savePlanConclusion()">Salvar conclusão</button></div></div>`}
+function planningHTML(p){return `<div class="panel"><div class="panelhead"><h2>Planejamento do projeto – F-8.03.01</h2><div class="toolbar"><span class="badge blue">9 blocos de planejamento</span><button class="btn small" id="btnReportPlan" onclick="gerarRelatorioGeral({only:'planejamento',projectId:currentId,btnId:'btnReportPlan'})" title="Gera o PDF só com o planejamento F-8.03.01 e as evidências, usando o que já está salvo">⇩ Gerar relatório do planejamento</button></div></div><div class="panelbody"><div class="notice blue">Preencha cada bloco e anexe os registros que comprovem as informações. Este módulo detalha os campos previstos no item 6.3 e nas entradas do item 6.4 do PG-8.03.</div>${planningFields.map(f=>{let d=p.planning?.[f[0]]||{};return `<div class="stage"><div class="stagehead"><strong>${f[1]}</strong>${d.updated?`<small>Atualizado em ${fmt(d.updated.slice(0,10))}</small>`:""}</div><p class="muted" style="font-size:11px">${f[2]}</p><div class="field"><label>Registro / descrição</label><textarea id="plan_${f[0]}" placeholder="Descreva as informações, datas, responsáveis, resultados e observações...">${esc(d.text||"")}</textarea></div><div class="grid" style="margin-top:10px"><div class="field"><label>Responsável pelo registro</label><input id="planowner_${f[0]}" value="${esc(d.owner||"")}" placeholder="Nome do responsável"></div><div class="field"><label>Data de realização</label><input id="plandate_${f[0]}" type="date" value="${esc(d.date||"")}"></div></div><div class="field" style="margin-top:10px"><label>Evidências</label><input type="file" multiple id="planfiles_${f[0]}"><div>${fileList(d.files||[])}</div></div><button class="btn small" style="margin-top:10px" onclick="savePlanning('${f[0]}')">Salvar bloco</button></div>`}).join("")}<div class="field"><label>Conclusão do planejamento</label><textarea id="plan_conclusion" placeholder="Registre a conclusão do planejamento e as condições para continuidade...">${esc(p.planning?.conclusion||"")}</textarea></div><div class="field" style="margin-top:10px"><label>Anexar evidências da conclusão</label><input type="file" multiple id="plan_conclusion_files"><small>Anexe a ata, aprovação, e-mails ou outros registros que comprovem a conclusão do planejamento.</small><div>${fileList(p.planning?.conclusionFiles||[])}</div></div><button class="btn primary" style="margin-top:10px" onclick="savePlanConclusion()">Salvar conclusão</button></div></div>`}
 async function savePlanning(key){
 const btn=document.activeElement&&document.activeElement.tagName==="BUTTON"?document.activeElement:null,label=btn?btn.textContent:"";
 const mainEl=document.querySelector(".main"),y=mainEl?mainEl.scrollTop:0;
@@ -1218,7 +1218,7 @@ const PREF={commercial:"6.4.1",product:"6.4.2",samples:"6.4.3",risk:"6.4.4",defi
 const SREF={"04":"6.4.6 / 6.6","08":"6.6","12":"6.5.2","13":"6.5.3","14":"6.5.3","15":"6.5.1"};
 const clean=t=>t.replace(/^\d+\.\d+\s*/,"");
 
-window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};const only=opts.only||"",AMB=only==="ambiental";
+window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};const only=opts.only||"",AMB=only==="ambiental",PLAN=only==="planejamento";
  const btn=document.getElementById(opts.btnId||"btnReport"),lbl=btn?btn.textContent:"",st=t=>{if(btn)btn.textContent=t;setSync(t)};
  try{
  if(btn)btn.disabled=true;st("Carregando recursos...");
@@ -1249,7 +1249,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   if(ja.length)para("Já apresentados em outro item deste relatório: "+ja.map(nm).join("; "),{i:1,c:GRAY,s:8})};
  /* ---- Capa ---- */
  d.setFillColor(...NAVY);d.rect(0,0,W,6,"F");d.addImage(LOGO,"PNG",M,28,86,24.8);
- if(AMB){txt("RELATÓRIO DA ANÁLISE AMBIENTAL",M,88,{b:1,s:21,c:NAVY});txt("Análise ambiental conforme a ISO 14001, registro por registro, com as evidências",M,98,{s:12,c:BLUE})}else if(only){txt("RELATÓRIO DO CRONOGRAMA",M,88,{b:1,s:21,c:NAVY});txt("Cronograma de desenvolvimento, etapa por etapa, com as evidências",M,98,{s:12,c:BLUE})}else{txt("RELATÓRIO DE DESENVOLVIMENTO DO PROJETO",M,88,{b:1,s:21,c:NAVY});txt("Documentação do processo para auditoria",M,98,{s:13,c:BLUE})}
+ if(PLAN){txt("RELATÓRIO DO PLANEJAMENTO",M,88,{b:1,s:21,c:NAVY});txt("Formulário F-8.03.01, bloco por bloco, com as evidências",M,98,{s:12,c:BLUE})}else if(AMB){txt("RELATÓRIO DA ANÁLISE AMBIENTAL",M,88,{b:1,s:21,c:NAVY});txt("Análise ambiental conforme a ISO 14001, registro por registro, com as evidências",M,98,{s:12,c:BLUE})}else if(only){txt("RELATÓRIO DO CRONOGRAMA",M,88,{b:1,s:21,c:NAVY});txt("Cronograma de desenvolvimento, etapa por etapa, com as evidências",M,98,{s:12,c:BLUE})}else{txt("RELATÓRIO DE DESENVOLVIMENTO DO PROJETO",M,88,{b:1,s:21,c:NAVY});txt("Documentação do processo para auditoria",M,98,{s:13,c:BLUE})}
  d.setDrawColor(...BLUE);d.setLineWidth(1.2);d.line(M,104,M+60,104);
  let ci=[["Formulário / Procedimento","F-8.03.01 / PG-8.03 (Rev. 08)"]];
  if(multi)ci.push(["Projetos incluídos",String(list.length)]);else{const p=list[0];ci.push(["Projeto",p.name],["Identificação",(p.projectRef||p.id)+(p.code?" / "+p.code:"")],["Tipo de desenvolvimento",p.type+" - "+(TYPE_FULL[p.type]||"")],["Responsável",p.owner||"-"],["Status / progresso",p.status+" / "+progress(p)+"%"])}
@@ -1261,14 +1261,14 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
  /* ---- Projetos ---- */
  let k=0;
  for(const p of list){k++;
-  const files=allFiles(AMB?(p.environment||[]):(only?p.stages:p));tAtt=files.length;nAtt=0;shown.clear();cache.clear();
+  const files=allFiles(PLAN?[p.generalFiles||[],p.planning||{}]:AMB?(p.environment||[]):(only?p.stages:p));tAtt=files.length;nAtt=0;shown.clear();cache.clear();
   const origin=new Map(),reg=(a,l)=>(a||[]).forEach(f=>{if(!origin.has(fk(f)))origin.set(fk(f),l)});
   reg(p.generalFiles,"1.1 Entradas do projeto");planningFields.forEach((f,i)=>reg(p.planning?.[f[0]]?.files,"1."+(i+2)+" "+clean(f[1])));reg(p.planning?.conclusionFiles,"1.11 Conclusão do planejamento");
   p.stages.forEach(s=>{reg(s.files,"2 Etapa "+s.number);Object.keys(s.subFiles||{}).forEach(k=>reg(s.subFiles[k],"2 Etapa "+s.number+" - "+k));(s.checks||[]).forEach(c=>reg(c.files,"2 Etapa "+s.number+" - "+c.label))});(p.suppliers||[]).forEach(r=>reg(r.files,"4 Fornecedores"));(p.environment||[]).forEach(r=>reg(r.files,AMB?"1 Análise ambiental":"5 Análise ambiental"));(p.approvals||[]).forEach(a=>reg(a.files,"7 Aprovações"));
   const S=(n,t)=>multi?h2(k+"."+n+" "+t):h1(n+". "+t),P=multi?k+".":"",CN=only?1:2;
   if(multi)h1("Projeto "+k+" - "+p.name);
   const pl=planningFields.filter(f=>p.planning?.[f[0]]?.text),chk=p.stages.reduce((a,s)=>a+s.checks.filter(c=>c.done).length,0),chkT=p.stages.reduce((a,s)=>a+s.checks.length,0);
-  if(!only){
+  if(!only||PLAN){
   /* ===== 1 PLANEJAMENTO ===== */
   S(1,"Planejamento do projeto - F-8.03.01");
   para("Esta etapa documenta o planejamento do projeto registrado no Formulário de Desenvolvimento F-8.03.01, na ordem em que as informações são previstas no procedimento PG-8.03: entradas do projeto, nove blocos de planejamento e a conclusão do planejamento. Para cada item são apresentados o requisito, o registro, o responsável, a data e as evidências anexadas.",{s:9.5});
@@ -1281,6 +1281,15 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
    para("Requisito: "+f[2],{s:9,c:GRAY,i:1});table(["Responsável pelo registro","Data de realização","Última atualização"],[[x.owner||"-",D(x.date),x.updated?D(x.updated):"-"]],[70,50,CW-120]);
    h3("Descrição, definições e decisões registradas");para(x.text||"Sem registro de texto neste bloco.",{c:x.text?undefined:GRAY,i:!x.text});await evid(x.files,clean(f[1]))}
   sub(P+"1.11 Conclusão do planejamento  (PG-8.03, item 6.5.1)");para(p.planning?.conclusion||"Conclusão do planejamento não registrada.",{c:p.planning?.conclusion?undefined:GRAY,i:!p.planning?.conclusion});await evid(p.planning?.conclusionFiles,"conclusão do planejamento");
+  if(PLAN){
+  sub(P+"1.12 Situação do planejamento");
+  const semE=planningFields.filter(f=>!(p.planning?.[f[0]]?.files||[]).length);
+  table(["Indicador","Resultado"],[["Blocos de planejamento com registro",pl.length+" de "+planningFields.length],["Blocos com evidências anexadas",(planningFields.length-semE.length)+" de "+planningFields.length],["Conclusão do planejamento",p.planning?.conclusion?"Registrada":"Não registrada"],["Anexos incorporados",files.length]],[70,CW-70]);
+  const pd=[];planningFields.filter(f=>!p.planning?.[f[0]]?.text).forEach(f=>pd.push([clean(f[1]),"Sem registro de texto"]));semE.forEach(f=>pd.push([clean(f[1]),"Sem evidências anexadas"]));if(!p.planning?.conclusion)pd.push(["Conclusão do planejamento","Sem registro"]);
+  h3("Pendências");if(pd.length)table(["Item","Situação"],pd,[70,CW-70]);else para("Não há pendências identificadas no planejamento.",{b:1,s:9.5,c:OK});
+  para("Documento gerado automaticamente a partir dos registros do sistema em "+gen+"; reflete as informações lançadas pelos responsáveis.",{s:9,i:1,c:GRAY});
+  need(40);y+=14;[["Responsável pelo desenvolvimento",p.owner||""],["Aprovação do planejamento",""]].forEach((r,i)=>{const x=M+i*(CW/2+3),w=CW/2-6;d.setDrawColor(90,96,110);d.line(x,y,x+w,y);txt(r[0],x,y+4.5,{s:8.5,c:GRAY});if(r[1])txt(r[1],x,y+9,{s:9,b:1})});y+=16;txt("Data da impressão: "+now.toLocaleDateString("pt-BR"),M,y,{s:9});
+  continue}
   }
   /* ===== RELATÓRIO SÓ DA ANÁLISE AMBIENTAL (ISO 14001) ===== */
   if(AMB){
@@ -1422,9 +1431,9 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
  }
  /* ---- sumário ---- */
  d.setPage(2);const sp=Math.min(7,225/Math.max(toc.length,1)),fs=toc.length>32?8.5:10;let ty=44;toc.forEach(e=>{const x=M+(e.l-1)*(multi?7:0);txt(e.t,x,ty,{b:e.l===1,s:e.l===1?fs:fs-.5,c:e.l===1?NAVY:[50,55,70]});txt(String(e.p),W-M,ty,{s:fs,a:"right",c:NAVY});d.setDrawColor(215,220,230);d.setLineWidth(.2);d.line(x+d.getTextWidth(T(e.t))+2,ty,W-M-8,ty);ty+=sp});
- const N=pg();for(let i=2;i<=N;i++){d.setPage(i);d.addImage(LOGO,"PNG",M,6,24,6.9);txt((AMB?"Relatório da Análise Ambiental - ISO 14001":only?"Relatório do Cronograma":"Relatório de Desenvolvimento do Projeto")+" | F-8.03.01 | PG-8.03 Rev. 08",W-M,10,{s:8,c:GRAY,a:"right"});d.setDrawColor(...BLUE);d.setLineWidth(.5);d.line(M,15,W-M,15);d.setDrawColor(200,205,215);d.setLineWidth(.2);d.line(M,H-13,W-M,H-13);txt("Hi Tech Automotive - Gerado em "+gen,M,H-8,{s:8,c:GRAY});txt("Página "+i+" de "+N,W-M,H-8,{s:8,c:GRAY,a:"right"})}
+ const N=pg();for(let i=2;i<=N;i++){d.setPage(i);d.addImage(LOGO,"PNG",M,6,24,6.9);txt((PLAN?"Relatório do Planejamento":AMB?"Relatório da Análise Ambiental - ISO 14001":only?"Relatório do Cronograma":"Relatório de Desenvolvimento do Projeto")+" | F-8.03.01 | PG-8.03 Rev. 08",W-M,10,{s:8,c:GRAY,a:"right"});d.setDrawColor(...BLUE);d.setLineWidth(.5);d.line(M,15,W-M,15);d.setDrawColor(200,205,215);d.setLineWidth(.2);d.line(M,H-13,W-M,H-13);txt("Hi Tech Automotive - Gerado em "+gen,M,H-8,{s:8,c:GRAY});txt("Página "+i+" de "+N,W-M,H-8,{s:8,c:GRAY,a:"right"})}
  const nme=multi?"Todos":String(list[0].code||list[0].name).replace(/[^a-zA-Z0-9_-]+/g,"_").slice(0,40);
- d.save((AMB?"Relatorio_Analise_Ambiental_ISO14001_":only?"Relatorio_Cronograma_":"Relatorio_Auditoria_")+nme+"_"+dateNow()+".pdf");
+ d.save((PLAN?"Relatorio_Planejamento_F-8.03.01_":AMB?"Relatorio_Analise_Ambiental_ISO14001_":only?"Relatorio_Cronograma_":"Relatorio_Auditoria_")+nme+"_"+dateNow()+".pdf");
  try{localStorage.setItem("hitech_last_report",now.toISOString())}catch(e){}
  setSync("Relatório gerado")
  }catch(e){console.error(e);setSync("Erro ao gerar relatório",true);alert("Não foi possível gerar o relatório: "+(e.message||e))}
