@@ -396,6 +396,20 @@ b,strong{font-weight:600}
 .ashow-dots i.on:after{transform:scaleX(1)}
 @media(max-width:900px){.authleft .ashow{display:none}.authleft .aintro{margin:0}.authleft .aintro h1{margin:16px 0 0}}
 @media(prefers-reduced-motion:reduce){.authleft .ashow{display:none}}
+
+/* ---- login: vídeo à esquerda, destaques abaixo do vídeo, título acima do login ---- */
+.authleft .aintro{display:none}
+.reyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#f47721;margin:0 0 10px}
+.lchips{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:auto 0 22px;position:relative;z-index:2}
+.authleft .lchips+.alfoot{margin-top:0}
+.lchip{display:flex;gap:10px;align-items:center;background:#0b1a2ccc;border:1px solid #ffffff1a;border-radius:12px;padding:11px 13px;backdrop-filter:blur(8px)}
+.lchip i{width:32px;height:32px;border-radius:9px;background:#ffffff12;border:1px solid #ffffff1f;display:grid;place-items:center;font-style:normal;color:#ff9a57;font-size:15px;flex:none}
+.lchip b{display:block;font-size:13.5px;line-height:1.25;color:#fff}
+.lchip span{display:block;margin-top:2px;font-size:12px;line-height:1.3;color:#a9bccf}
+.authleft .ashow-card{top:118px;height:min(calc(100% - 118px - var(--cb,250px)),560px);transform:scale(.94);transform-origin:center top}
+.authleft.is-show .ashow-card{transform:scale(1)}
+.authleft .ashow-txt{top:calc(118px + min(calc(100% - 118px - var(--cb,250px)),560px)/2)}
+@media(max-width:900px){.lchips,.reyebrow{display:none}.authleft .aintro,.authleft.is-show .aintro{display:block;opacity:1;transform:none}.authleft .alfoot{margin-top:auto}}
 </style>
 <script>try{if(localStorage.getItem("hitech_theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 </head>
@@ -405,10 +419,11 @@ b,strong{font-weight:600}
 <div class="afeat"><i>◷</i><div><b>Cronograma em 18 etapas</b><span>Prazos, responsáveis e alertas de atraso</span></div></div>
 <div class="afeat"><i>▣</i><div><b>Evidências rastreáveis</b><span>Anexos vinculados a cada verificação</span></div></div>
 <div class="afeat"><i>⇩</i><div><b>Relatórios para auditoria</b><span>PDF completo gerado em um clique</span></div></div></div>
-<div class="ashow" aria-hidden="true"><video class="ashow-bg" muted playsinline preload="none"></video><div class="ashow-txt"><small>Produtos HiTech</small><b>Do desenvolvimento<br>ao mercado</b><span>Um portfólio. Muitas soluções.</span><div class="ashow-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="ashow-card"><video class="ashow-v" muted playsinline preload="none" poster="poster.jpg"></video></div></div>
+<div class="ashow" aria-hidden="true"><video class="ashow-bg" muted playsinline preload="none"></video><div class="ashow-txt"><small>Produtos HiTech</small><b>Desenvolvimento<br>de Produtos</b><span>Do desenvolvimento ao mercado.</span><div class="ashow-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="ashow-card"><video class="ashow-v" muted playsinline preload="none" poster="poster.jpg"></video></div></div>
+<div class="lchips"><div class="lchip"><i>◷</i><div><b>Cronograma em 18 etapas</b><span>Prazos, responsáveis e alertas de atraso</span></div></div><div class="lchip"><i>▣</i><div><b>Evidências rastreáveis</b><span>Anexos vinculados a cada verificação</span></div></div><div class="lchip"><i>⇩</i><div><b>Relatórios para auditoria</b><span>PDF completo gerado em um clique</span></div></div></div>
 <div class="alfoot"><span>Hi Tech Automotive</span><span>HiTech - ISO 9001 (8.3) - ISO 14001 (6.1.2/8.1)</span></div></div>
 <div class="authright"><button type="button" class="themebtn" onclick="toggleTheme()" title="Alternar tema claro/escuro"><span aria-hidden="true" class="themeIco">☀</span><span class="tk" aria-hidden="true"></span><span class="tl themeLbl">Claro</span></button>
-<div class="authform" id="loginForm"><h2>Bem-vindo de volta</h2><p>Acesse com seu e-mail e senha corporativos.</p>
+<div class="authform" id="loginForm"><div class="reyebrow">Desenvolvimento de Produtos</div><h2>Bem-vindo de volta</h2><p>Acesse com seu e-mail e senha corporativos.</p>
 <label for="authEmail">E-mail</label><div class="ainp"><span aria-hidden="true">✉</span><input id="authEmail" type="email" autocomplete="username" placeholder="nome@empresa.com"></div>
 <label for="authPassword">Senha</label><div class="ainp"><span aria-hidden="true">🔒</span><input id="authPassword" type="password" autocomplete="current-password" placeholder="Sua senha"><button type="button" class="eye" onclick="togglePwd('authPassword',this)" title="Mostrar senha" aria-label="Mostrar senha">👁</button></div>
 <div class="arow" style="justify-content:flex-end"><button type="button" class="link" id="authForgot">Esqueci minha senha</button></div>
@@ -1442,19 +1457,17 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
 </script>
 
 <script>
-/* vitrine de produtos no lado esquerdo do login: abertura 7 s -> vídeo dos produtos -> volta */
+/* vitrine de produtos no lado esquerdo do login: vídeo passando direto, em repetição */
 (function(){const L=document.querySelector(".authleft"),S=document.getElementById("authScreen");if(!L||!S)return;
-const v=L.querySelector(".ashow-v"),bg=L.querySelector(".ashow-bg"),dots=[...L.querySelectorAll(".ashow-dots i")],SRC="produtos.mp4",INTRO=+(window.ASHOW_INTRO||7000);
+const v=L.querySelector(".ashow-v"),bg=L.querySelector(".ashow-bg"),dots=[...L.querySelectorAll(".ashow-dots i")],SRC="produtos.mp4";
 const ok=()=>S.classList.contains("show")&&innerWidth>900&&!matchMedia("(prefers-reduced-motion: reduce)").matches;
-let tm=null,on=false,fail=0;
-const intro=()=>{on=false;L.classList.remove("is-show");try{v.pause();bg.pause()}catch(e){}clearTimeout(tm);tm=setTimeout(show,INTRO)};
-const show=()=>{clearTimeout(tm);if(!ok()||fail>2){tm=setTimeout(show,4000);return}
+v.loop=bg.loop=true;L.classList.add("is-show");const ch=L.querySelector(".lchips");const fit=()=>{if(!ch||!ch.offsetHeight)return;L.style.setProperty("--cb",Math.round(L.getBoundingClientRect().bottom-ch.getBoundingClientRect().top+22)+"px")};fit();addEventListener("resize",fit);if(document.fonts)document.fonts.ready.then(fit);
+const run=()=>{fit();if(!ok()){try{v.pause();bg.pause()}catch(e){}return}
  if(!v.getAttribute("src")){v.src=SRC;bg.src=SRC}
- try{v.currentTime=0;bg.currentTime=0}catch(e){}
- v.play().then(()=>{on=true;bg.play().catch(()=>{});L.classList.add("is-show")}).catch(()=>{fail++;tm=setTimeout(show,INTRO)})};
+ v.play().then(()=>bg.play().catch(()=>{})).catch(()=>{})};
 v.addEventListener("timeupdate",()=>{if(!v.duration)return;const k=Math.floor(v.currentTime/v.duration*dots.length);dots.forEach((d,i)=>d.classList.toggle("on",i<=k));if(Math.abs(bg.currentTime-v.currentTime)>.4)bg.currentTime=v.currentTime});
-v.addEventListener("ended",intro);v.addEventListener("error",()=>{fail=9;intro()});
-document.addEventListener("visibilitychange",()=>{if(!on)return;if(document.hidden){v.pause();bg.pause()}else{v.play().catch(()=>{});bg.play().catch(()=>{})}});
-new MutationObserver(()=>{if(!S.classList.contains("show")&&on)intro()}).observe(S,{attributes:true,attributeFilter:["class"]});
-tm=setTimeout(show,INTRO)})();
+document.addEventListener("visibilitychange",()=>{if(document.hidden){v.pause();bg.pause()}else run()});
+new MutationObserver(run).observe(S,{attributes:true,attributeFilter:["class"]});
+addEventListener("resize",()=>{clearTimeout(run.t);run.t=setTimeout(run,300)});
+run()})();
 </script>
