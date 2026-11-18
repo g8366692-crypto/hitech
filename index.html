@@ -76,7 +76,7 @@ th,td{font-size:14px}
 .field small{font-size:12.5px}
 .notice{font-size:13.5px}
 
-/* ===== Menu do projeto: só Planejamento e Cronograma em destaque ===== */
+/* ===== Menu do projeto: só o Cronograma em destaque ===== */
 .projectnav .group{background:transparent;border-left:0;border-radius:0;color:#8a99a8;font-size:11.5px;font-weight:600;letter-spacing:.9px;padding:14px 12px 4px;margin:6px 0 0}
 .projectnav button{font-weight:400;color:#526273}
 .projectnav button:hover,.projectnav button.active{background:transparent;color:#526273;font-weight:400}
@@ -984,15 +984,15 @@ async function createProject(){let val=id=>document.getElementById(id).value.tri
 let id=newId();let projectRef="PRJ-"+Date.now();let p={id,projectRef,name:val("f_name"),code:val("f_code"),type:val("f_type"),origin:val("f_origin"),needDate:val("f_needDate"),receivedDate:val("f_receivedDate"),requester:val("f_requester"),department:val("f_department"),owner:val("f_owner"),due:val("f_due"),dueOriginal:val("f_due"),dueHistory:[],reason:val("f_reason"),status:"Em andamento",created:dateNow(),updated:new Date().toISOString(),stages:STAGES.map(s=>({number:s[0],name:s[1],status:"Não iniciada",checks:buildChecks(s[3]),notes:"",start:"",end:"",plannedStart:"",plannedEnd:"",delayCause:"",delayNote:"",replans:[],responsible:"",files:[]})),generalFiles:[],events:[]};
 p.generalFiles=await filesFrom(document.getElementById("f_files"),"Abertura do projeto",id);p.events.push({date:new Date().toISOString(),title:"Projeto cadastrado",detail:`Necessidade originada em ${fmt(p.needDate)}; solicitação recebida em ${fmt(p.receivedDate)}. Solicitante: ${p.requester}.`});await save(p);closeModal();openProject(id)}
 function openProject(id){currentId=id;currentTab="overview";renderProject()}
-function renderProject(){window.__inProject=true;let p=getP();if(!p){window.__inProject=false;return showPage("projects")}document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["planning","Planejamento F-8.03.01"],["stages","Cronograma – "+STAGES.length+" etapas"],["suppliers","Fornecedores"],["environment","Análise ambiental conforme a ISO 14001"],["approvals","Aprovações"],["evidence","Evidências"],["history","Histórico"]];
+function renderProject(){window.__inProject=true;let p=getP();if(!p){window.__inProject=false;return showPage("projects")}document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["stages","Cronograma – "+STAGES.length+" etapas"],["suppliers","Fornecedores"],["environment","Análise ambiental conforme a ISO 14001"],["approvals","Aprovações"],["evidence","Evidências"],["history","Histórico"]];
 document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Projeto ${esc(p.projectRef||p.id)}</div><h1>${esc(p.name)}</h1><p class="sub">${esc(p.code||"Sem código")} · Tipo ${esc(p.type)} · Criado em ${fmt(p.created)}</p></div><div class="toolbar"><button class="btn" onclick="showPage('projects')">← Projetos</button><button class="btn primary" onclick="editProject()">Editar dados</button><button class="btn danger" onclick="deleteProject('${p.id}')">🗑 Excluir projeto</button></div></div>
-<div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===1||i===3||i===5?`<div class="group">${i===0?"Projeto":i===1?"Planejamento":i===3?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}${t[0]==="planning"||t[0]==="stages"?" keytab":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
+<div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===1||i===2||i===4?`<div class="group">${i===0?"Projeto":i===1?"Cronograma":i===2?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}${t[0]==="stages"?" keytab":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
 renderProjectTab()}
 function setTab(t){currentTab=t;renderProject()}
 function renderProjectTab(){let p=getP(),el=document.getElementById("projectContent");if(!p||!el)return;
 if(currentTab==="overview")el.innerHTML=overviewHTML(p);
 if(currentTab==="identification")el.innerHTML=identHTML(p);
-if(currentTab==="planning")el.innerHTML=planningHTML(p);
+if(currentTab==="planning"){currentTab="stages";el.innerHTML=stagesHTML(p)}
 if(currentTab==="stages")el.innerHTML=stagesHTML(p);
 if(currentTab==="suppliers")el.innerHTML=simpleRecordHTML(p,"suppliers","Desenvolvimento de fornecedores",["Fornecedor","Insumo","Data de início","Data de solicitação da amostra","Data de recebimento da amostra","Responsável","Resultado / conclusão"],"Registre o desenvolvimento do fornecedor, a documentação, as amostras, a homologação e o lote piloto. Considere o estoque mínimo equivalente a 30 dias de consumo previsto no PG-8.03.");
 if(currentTab==="environment")el.innerHTML=simpleRecordHTML(p,"environment","Análise ambiental conforme a ISO 14001",["Matéria-prima / insumo","Impacto identificado","Alternativas avaliadas","Melhoria / justificativa","Responsável","Data da avaliação","Conclusão"],"Registrar a avaliação ambiental conforme a ISO 14001 (aspectos e impactos ambientais) e a priorização de matérias-primas e insumos de menor impacto.",`<button class="btn small" id="btnReportAmb" onclick="gerarRelatorioGeral({only:'ambiental',projectId:currentId,btnId:'btnReportAmb'})" title="Gera o PDF só com a análise ambiental e as evidências, usando o que já está salvo">⇩ Gerar relatório da análise ambiental</button>`);
@@ -1036,35 +1036,6 @@ return `${deadlineSummary(p)}<div class="panel"><div class="panelbody"><div clas
 
 <div class="panel"><div class="panelhead"><h2>Últimas movimentações</h2><button class="btn small" onclick="setTab('history')">Ver histórico</button></div><div class="panelbody">${timelineHTML((p.events||[]).slice(-5).reverse())}</div></div>`}
 function identHTML(p){return `<div class="panel"><div class="panelhead"><h2>Identificação e origem da necessidade</h2>${statusBadge(p.status)}</div><div class="panelbody"><div class="grid"><div class="field"><label>Origem da necessidade</label><input value="${esc(p.origin)}" readonly></div><div class="field"><label>Tipo de desenvolvimento</label><select id="p_type" onchange="changeProjectType(this.value)">${TYPES.some(t=>t[0]===p.type)?"":`<option value="${esc(p.type)}" selected>${esc(p.type||"—")}</option>`}${TYPES.map(t=>`<option value="${t[0]}" ${p.type===t[0]?"selected":""}>Tipo ${t[0]} — ${TYPE_FULL[t[0]]}</option>`).join("")}</select><small style="line-height:1.5;margin-top:6px">${typeDescHTML(p.type)}</small></div><div class="field"><label>Data em que surgiu a necessidade</label><input value="${esc(p.needDate)}" readonly></div><div class="field"><label>Data de recebimento pelo Desenvolvimento</label><input value="${esc(p.receivedDate)}" readonly></div><div class="field"><label>Solicitante</label><input value="${esc(p.requester)}" readonly></div><div class="field"><label>Departamento</label><input value="${esc(p.department)}" readonly></div><div class="field"><label>Responsável pelo desenvolvimento</label><input value="${esc(p.owner)}" readonly></div><div class="field"><label>Prazo previsto</label><input value="${esc(p.due)}" readonly></div><div class="field full"><label>Descrição da necessidade / justificativa</label><textarea readonly>${esc(p.reason)}</textarea></div></div><div class="sectiontitle">Evidências da abertura</div>${fileList(p.generalFiles)}</div></div>`}
-const planningFields=[
-["commercial","5.1 Informações comerciais","Marcas e patentes, segmento, volume mensal previsto, mercado, concorrentes, faixa de preço e outras informações comerciais."],
-["product","5.2 Informações do produto","Descrição do produto, tipo de desenvolvimento, características pretendidas e especificações técnicas."],
-["samples","5.3 Amostra / Relatório de análise","Especificações vigentes, amostras de referência, relatórios, datas de solicitação e recebimento, análises e conclusão."],
-["risk","5.4 Análise de riscos","Requisitos estatutários e regulamentares, falha no processo, falta de matéria-prima e demais riscos identificados."],
-["definition","5.5 Definição do produto","Justificativa, disponibilidade de especificação, métodos de ensaio, equipamentos e ferramentas de controle."],
-["materials","5.6 Lista de materiais","Matérias-primas, embalagens, ferramentas, disponibilidade no início do projeto e necessidade de qualificação de fornecedor."],
-["manufacturing","5.7 Fabricação do produto","Descrição detalhada do início e continuidade da fabricação, local, processo, equipamentos e controles."],
-["newprocess","5.8 Necessidade de novos processos","Registrar se haverá novo processo, justificativa, recursos, responsáveis e participação do Gerente de Planejamento e Novos Projetos."],
-["external","5.9 Processos externos","Processos terceirizados, fornecedor, custos, disponibilidade e justificativa."]
-];
-function planningHTML(p){return `<div class="panel"><div class="panelhead"><h2>Planejamento do projeto – F-8.03.01</h2><div class="toolbar"><span class="badge blue">9 blocos de planejamento</span><button class="btn small" id="btnReportPlan" onclick="gerarRelatorioGeral({only:'planejamento',projectId:currentId,btnId:'btnReportPlan'})" title="Gera o PDF só com o planejamento F-8.03.01 e as evidências, usando o que já está salvo">⇩ Gerar relatório do planejamento</button></div></div><div class="panelbody"><div class="notice blue">Preencha cada bloco e anexe os registros que comprovem as informações. Este módulo detalha os campos previstos no item 6.3 e nas entradas do item 6.4 do PG-8.03.</div>${planningFields.map(f=>{let d=p.planning?.[f[0]]||{};return `<div class="stage"><div class="stagehead"><strong>${f[1]}</strong>${d.updated?`<small>Atualizado em ${fmt(d.updated.slice(0,10))}</small>`:""}</div><p class="muted" style="font-size:11px">${f[2]}</p><div class="field"><label>Registro / descrição</label><textarea id="plan_${f[0]}" placeholder="Descreva as informações, datas, responsáveis, resultados e observações...">${esc(d.text||"")}</textarea></div><div class="grid" style="margin-top:10px"><div class="field"><label>Responsável pelo registro</label><input id="planowner_${f[0]}" value="${esc(d.owner||"")}" placeholder="Nome do responsável"></div><div class="field"><label>Data de realização</label><input id="plandate_${f[0]}" type="date" value="${esc(d.date||"")}"></div></div><div class="field" style="margin-top:10px"><label>Evidências</label><input type="file" multiple id="planfiles_${f[0]}"><div>${fileList(d.files||[])}</div></div><button class="btn small" style="margin-top:10px" onclick="savePlanning('${f[0]}')">Salvar bloco</button></div>`}).join("")}<div class="field"><label>Conclusão do planejamento</label><textarea id="plan_conclusion" placeholder="Registre a conclusão do planejamento e as condições para continuidade...">${esc(p.planning?.conclusion||"")}</textarea></div><div class="field" style="margin-top:10px"><label>Anexar evidências da conclusão</label><input type="file" multiple id="plan_conclusion_files"><small>Anexe a ata, aprovação, e-mails ou outros registros que comprovem a conclusão do planejamento.</small><div>${fileList(p.planning?.conclusionFiles||[])}</div></div><button class="btn primary" style="margin-top:10px" onclick="savePlanConclusion()">Salvar conclusão</button></div></div>`}
-async function savePlanning(key){
-const btn=document.activeElement&&document.activeElement.tagName==="BUTTON"?document.activeElement:null,label=btn?btn.textContent:"";
-const mainEl=document.querySelector(".main"),y=mainEl?mainEl.scrollTop:0;
-try{
-if(btn){btn.disabled=true;btn.textContent="Salvando..."}
-const g=id=>document.getElementById(id),title=planningFields.find(f=>f[0]===key)[1];
-const textv=g("plan_"+key).value,owner=g("planowner_"+key).value,date=g("plandate_"+key).value;
-const files=await filesFrom(g("planfiles_"+key),title);
-let p=getP();if(!p)throw new Error("Projeto não encontrado. Recarregue a página.");
-p.planning=p.planning||{};const old=p.planning[key]||{};
-p.planning[key]={text:textv,owner,date,updated:new Date().toISOString(),files:[...(old.files||[]),...files]};
-addEvent(p,"Planejamento atualizado",title);
-const r=await save(p);
-if(r){renderProjectTab();if(mainEl)mainEl.scrollTop=y;setSync("Bloco salvo")}
-}catch(e){console.error("Erro ao salvar bloco:",e);setSync("Erro ao salvar",true);alert("Não foi possível salvar o bloco: "+(e.message||e.error_description||JSON.stringify(e)));if(btn){btn.disabled=false;btn.textContent=label}}
-}
-async function savePlanConclusion(){try{const newFiles=await filesFrom(document.getElementById("plan_conclusion_files"),"Conclusão do planejamento");let p=getP();p.planning=p.planning||{};p.planning.conclusion=document.getElementById("plan_conclusion").value;p.planning.conclusionFiles=[...(p.planning.conclusionFiles||[]),...newFiles];addEvent(p,"Conclusão do planejamento registrada","F-8.03.01");const mainEl=document.querySelector(".main"),y=mainEl?mainEl.scrollTop:0;const r=await save(p);if(r){renderProjectTab();if(mainEl)mainEl.scrollTop=y}}catch(e){console.error(e);alert("Não foi possível salvar a conclusão: "+(e.message||JSON.stringify(e)))}}
 function stagesHTML(p){return `<div class="panel"><div class="panelhead"><h2>Cronograma de desenvolvimento</h2><div class="toolbar"><span class="badge blue">${doneCount(p)}/${STAGES.length} concluídas</span><button class="btn small" id="btnReportCrono" onclick="gerarRelatorioGeral({only:'cronograma',projectId:currentId,btnId:'btnReportCrono'})" title="Gera o PDF só com o cronograma e as evidências, usando o que já está salvo">⇩ Gerar relatório do cronograma</button><button class="btn primary small" onclick="planDeadlines()">◷ Planejar prazos</button></div></div><div class="panelbody">${deadlineSummary(p)}<div class="notice">Cada etapa possui responsável, datas previstas e reais, status, checklist, observações e anexos. As ${STAGES.length} etapas são uma estrutura de acompanhamento do projeto; os controles obrigatórios do PG-8.03 permanecem vinculados aos itens correspondentes.</div>${p.stages.map((s,i)=>stageHTML(s,i)).join("")}</div></div>`}
 const SEL_APROV=["Aprovado","Reprovado","Correção solicitada"],SEL_SN=["Sim","Não"];
 function fieldSpec(c,s){const L=c.label,l=L.toLowerCase(),R={k:"r",l:"Resposta / registro",t:"area"},D=(k,l)=>({k,l,t:"date"});
@@ -1122,7 +1093,7 @@ function renderBackup(){document.getElementById("crumb").textContent="Backup";le
 document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Segurança dos dados</div><h1>Backup e restauração</h1><p class="sub">Projetos e anexos ficam sincronizados na nuvem. O backup gera um arquivo completo para guardar em local seguro.</p></div></div>${backupNotice()}
 <div class="grid"><div class="panel"><div class="panelhead"><h2>Exportar backup</h2></div><div class="panelbody"><p>Gera um arquivo <b>.json</b> com todos os projetos, etapas, prazos, aprovações, histórico e anexos. Os anexos são incluídos no arquivo.</p><p class="muted">${projects.length} projeto(s) · cerca de ${(sz/1048576).toFixed(1)} MB · último backup: ${l?new Date(l).toLocaleString("pt-BR"):"nunca"}</p><button class="btn primary" onclick="exportBackup()">⇩ Baixar backup</button></div></div>
 <div class="panel"><div class="panelhead"><h2>Importar backup</h2></div><div class="panelbody"><p>Restaura projetos e anexos de um arquivo de backup. Nada é apagado: projetos novos entram, e os existentes só são atualizados se o backup for mais recente.</p><input type="file" accept=".json,application/json" onchange="importBackup(this)"></div></div></div>
-<div class="panel" style="margin-bottom:14px"><div class="panelhead"><h2>Relatório de auditoria do projeto (PDF)</h2></div><div class="panelbody"><p>Gera a <b>documentação cronológica do projeto</b> em PDF, na ordem: 1) Planejamento F-8.03.01, 2) Cronograma de desenvolvimento, 3) Controles complementares, 4) Fornecedores, 5) Análise ambiental conforme a ISO 14001, 6) Encerramento e rastreabilidade, 7) Aprovações. Todos os anexos são incorporados nas etapas correspondentes (imagens, páginas de PDF e quadro dos vídeos).</p><div class="field" style="margin:10px 0"><label>Projeto</label><select id="reportProject">${projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}<option value="">Todos os projetos (um único PDF)</option></select></div><p class="muted">Último relatório: ${(()=>{try{let r=localStorage.getItem("hitech_last_report");return r?new Date(r).toLocaleString("pt-BR"):"nunca"}catch(e){return"nunca"}})()} · com muitos anexos a geração pode levar alguns minutos.</p><button class="btn primary" id="btnReport" onclick="gerarRelatorioGeral()">⇩ Gerar relatório PDF</button></div></div><div class="notice blue"><b>Boas práticas:</b> faça backup ao fim de cada semana e salve o arquivo em pasta de rede ou nuvem da empresa, não só neste computador. O arquivo contém todos os anexos, então trate-o como documento confidencial. A sincronização entre usuários ocorre pelo Supabase. O backup é uma cópia adicional de segurança.</div>`}
+<div class="panel" style="margin-bottom:14px"><div class="panelhead"><h2>Relatório de auditoria do projeto (PDF)</h2></div><div class="panelbody"><p>Gera a <b>documentação cronológica do projeto</b> em PDF, na ordem: 1) Abertura do projeto, 2) Cronograma de desenvolvimento, 3) Controles complementares, 4) Fornecedores, 5) Análise ambiental conforme a ISO 14001, 6) Encerramento e rastreabilidade, 7) Aprovações. Todos os anexos são incorporados nas etapas correspondentes (imagens, páginas de PDF e quadro dos vídeos).</p><div class="field" style="margin:10px 0"><label>Projeto</label><select id="reportProject">${projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}<option value="">Todos os projetos (um único PDF)</option></select></div><p class="muted">Último relatório: ${(()=>{try{let r=localStorage.getItem("hitech_last_report");return r?new Date(r).toLocaleString("pt-BR"):"nunca"}catch(e){return"nunca"}})()} · com muitos anexos a geração pode levar alguns minutos.</p><button class="btn primary" id="btnReport" onclick="gerarRelatorioGeral()">⇩ Gerar relatório PDF</button></div></div><div class="notice blue"><b>Boas práticas:</b> faça backup ao fim de cada semana e salve o arquivo em pasta de rede ou nuvem da empresa, não só neste computador. O arquivo contém todos os anexos, então trate-o como documento confidencial. A sincronização entre usuários ocorre pelo Supabase. O backup é uma cópia adicional de segurança.</div>`}
 function toggleStage(i){document.getElementById("stagebody_"+i).classList.toggle("hidden")}
 /* ===== Alerta de atraso por e-mail (destino definido na Edge Function: gabriel@hitech.ind.br) ===== */
 function lateOpenStages(p,only){return (p.stages||[]).map((s,i)=>({s,i})).filter(x=>(only==null||x.i===only)&&stageDelay(x.s)&&!(x.s.delayAlertFor===(x.s.plannedEnd+"|"+(x.s.end||""))&&x.s.delayAlertDay===dateNow()))}
@@ -1240,11 +1211,10 @@ async function prep(f){const k=fk(f);if(cache.has(k))return cache.get(k);const r
  else if(isVid(f)){r.kind="vid";const im=await videoFrame(await blobOf(f));if(im)r.items=[{im,cap:nm(f)+" - quadro do vídeo anexado"}]}
 }catch(e){console.warn("anexo não processado",nm(f),e)}cache.set(k,r);return r}
 const D=s=>!s?"-":(String(s).length===10?fmt(s):new Date(s).toLocaleDateString("pt-BR"));
-const PREF={commercial:"6.4.1",product:"6.4.2",samples:"6.4.3",risk:"6.4.4",definition:"6.4.5",materials:"6.4.6",manufacturing:"6.4.7",newprocess:"6.3 (item 8)",external:"6.4.8"};
-const SREF={"04":"6.4.6 / 6.6","08":"6.6","12":"6.5.2","13":"6.5.3","14":"6.5.3","15":"6.5.1"};
+const SREF={"04":"6.4.3 / 6.6","08":"6.6","12":"6.5.2","13":"6.5.3","14":"6.5.3","15":"6.5.1"};
 const clean=t=>t.replace(/^\d+\.\d+\s*/,"");
 
-window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};const only=opts.only||"",AMB=only==="ambiental",PLAN=only==="planejamento",CRON=!!only&&!AMB&&!PLAN;
+window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};const only=opts.only||"",AMB=only==="ambiental",CRON=!!only&&!AMB;
  const btn=document.getElementById(opts.btnId||"btnReport"),lbl=btn?btn.textContent:"",st=t=>{if(btn)btn.textContent=t;setSync(t)};
  try{
  if(btn)btn.disabled=true;st("Carregando recursos...");
@@ -1277,9 +1247,9 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   if(ja.length)para("Já apresentados acima: "+ja.map(nm).join("; "),{i:1,c:GRAY,s:8})};
  /* ---- Capa ---- */
  d.setFillColor(...NAVY);d.rect(0,0,W,6,"F");d.addImage(LOGO,"PNG",M,28,86,24.8);if(CRON)txt("R-8.03.01",W-M,20,{b:1,s:13,c:NAVY,a:"right"});
- if(PLAN){txt("RELATÓRIO DO PLANEJAMENTO",M,88,{b:1,s:21,c:NAVY});txt("Formulário F-8.03.01, bloco por bloco, com as evidências",M,98,{s:12,c:BLUE})}else if(AMB){txt("RELATÓRIO DA ANÁLISE AMBIENTAL",M,88,{b:1,s:21,c:NAVY});txt("Análise ambiental conforme a ISO 14001, registro por registro, com as evidências",M,98,{s:12,c:BLUE})}else if(only){txt("RELATÓRIO DO CRONOGRAMA",M,88,{b:1,s:21,c:NAVY});txt("Cronograma de desenvolvimento, etapa por etapa, com as evidências",M,98,{s:12,c:BLUE})}else{txt("RELATÓRIO DE DESENVOLVIMENTO DO PROJETO",M,88,{b:1,s:21,c:NAVY});txt("Documentação do processo para auditoria",M,98,{s:13,c:BLUE})}
+ if(AMB){txt("RELATÓRIO DA ANÁLISE AMBIENTAL",M,88,{b:1,s:21,c:NAVY});txt("Análise ambiental conforme a ISO 14001, registro por registro, com as evidências",M,98,{s:12,c:BLUE})}else if(only){txt("RELATÓRIO DO CRONOGRAMA",M,88,{b:1,s:21,c:NAVY});txt("Cronograma de desenvolvimento, etapa por etapa, com as evidências",M,98,{s:12,c:BLUE})}else{txt("RELATÓRIO DE DESENVOLVIMENTO DO PROJETO",M,88,{b:1,s:21,c:NAVY});txt("Documentação do processo para auditoria",M,98,{s:13,c:BLUE})}
  d.setDrawColor(...BLUE);d.setLineWidth(1.2);d.line(M,104,M+60,104);
- let ci=[CRON?["Relatório / Procedimento","R-8.03.01 / PG-8.03"]:["Formulário / Procedimento","F-8.03.01 / PG-8.03 (Rev. 08)"]];
+ let ci=[CRON?["Relatório / Procedimento","R-8.03.01 / PG-8.03"]:["Procedimento","PG-8.03 (Rev. 09)"]];
  if(multi)ci.push(["Projetos incluídos",String(list.length)]);else{const p=list[0];ci.push(["Projeto",p.name],["Identificação",(p.projectRef||p.id)+(p.code?" / "+p.code:"")],["Tipo de desenvolvimento",p.type+" - "+(TYPE_FULL[p.type]||"")],["Responsável",p.owner||"-"],["Status / progresso",p.status+" / "+progress(p)+"%"])}
  ci.push(["Data de geração",gen],["Gerado por",currentUser?.email||"-"]);
  ci.forEach((r,i)=>{txt(r[0]+":",M,120+i*9,{b:1,s:10.5,c:NAVY});txt(d.splitTextToSize(T(r[1]),CW-62)[0],M+62,120+i*9,{s:10.5})});
@@ -1289,35 +1259,22 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
  /* ---- Projetos ---- */
  let k=0;
  for(const p of list){k++;
-  const files=allFiles(PLAN?[p.generalFiles||[],p.planning||{}]:AMB?(p.environment||[]):(only?p.stages:p));tAtt=files.length;nAtt=0;shown.clear();cache.clear();
+  const files=allFiles(AMB?(p.environment||[]):(only?p.stages:p));tAtt=files.length;nAtt=0;shown.clear();cache.clear();
   const origin=new Map(),reg=(a,l)=>(a||[]).forEach(f=>{if(!origin.has(fk(f)))origin.set(fk(f),l)});
-  reg(p.generalFiles,"1.1 Entradas do projeto");planningFields.forEach((f,i)=>reg(p.planning?.[f[0]]?.files,"1."+(i+2)+" "+clean(f[1])));reg(p.planning?.conclusionFiles,"1.11 Conclusão do planejamento");
+  reg(p.generalFiles,"1.1 Entradas do projeto");
   p.stages.forEach(s=>{reg(s.files,"2 Etapa "+s.number);Object.keys(s.subFiles||{}).forEach(k=>reg(s.subFiles[k],"2 Etapa "+s.number+" - "+k));(s.checks||[]).forEach(c=>reg(c.files,"2 Etapa "+s.number+" - "+c.label))});(p.suppliers||[]).forEach(r=>reg(r.files,"4 Fornecedores"));(p.environment||[]).forEach(r=>reg(r.files,AMB?"1 Análise ambiental":"5 Análise ambiental"));(p.approvals||[]).forEach(a=>reg(a.files,"7 Aprovações"));
   const S=(n,t)=>multi?h2(k+"."+n+" "+t):h1(n+". "+t),P=multi?k+".":"",CN=only?1:2;
   if(multi)h1("Projeto "+k+" - "+p.name);
-  const pl=planningFields.filter(f=>p.planning?.[f[0]]?.text),chk=p.stages.reduce((a,s)=>a+s.checks.filter(c=>c.done).length,0),chkT=p.stages.reduce((a,s)=>a+s.checks.length,0);
-  if(!only||PLAN){
-  /* ===== 1 PLANEJAMENTO ===== */
-  S(1,"Planejamento do projeto - F-8.03.01");
-  para("Esta etapa documenta o planejamento do projeto registrado no Formulário de Desenvolvimento F-8.03.01, na ordem em que as informações são previstas no procedimento PG-8.03: entradas do projeto, nove blocos de planejamento e a conclusão do planejamento. Para cada item são apresentados o requisito, o registro, o responsável, a data e as evidências anexadas.",{s:9.5});
+  const chk=p.stages.reduce((a,s)=>a+s.checks.filter(c=>c.done).length,0),chkT=p.stages.reduce((a,s)=>a+s.checks.length,0);
+  if(!only){
+  /* ===== 1 ABERTURA DO PROJETO ===== */
+  S(1,"Abertura do projeto");
+  para("Esta seção documenta as entradas registradas na abertura do projeto (origem, justificativa e enquadramento do tipo de desenvolvimento), conforme os itens 6.1, 6.2 e 6.4.1 do PG-8.03. O planejamento, a execução e a conclusão do projeto são registrados no cronograma de desenvolvimento (seção 2).",{s:9.5});
   sub(P+"1.1 Entradas do projeto (origem e justificativa)");
   table(["Campo","Registro"],[["ID do registro",p.projectRef||p.id],["Nome do projeto",p.name],["Código",p.code||"-"],["Tipo de desenvolvimento",p.type+" - "+(TYPE_FULL[p.type]||"")],["Origem da necessidade",p.origin],["Solicitante / departamento",(p.requester||"-")+" / "+(p.department||"-")],["Responsável pelo projeto",p.owner],["Data da necessidade",D(p.needDate)],["Recebimento no Desenvolvimento",D(p.receivedDate)],["Cadastro no sistema",D(p.created)],["Prazo do projeto",D(p.due)+((p.dueHistory||[]).length?" (replanejado "+p.dueHistory.length+" vez(es))":"")],["Status atual",p.status]],[58,CW-58]);
   h3("Justificativa / gatilho do projeto");para(p.reason||"Não registrada.");
   if(TYPE_DESC[p.type])para("Enquadramento conforme PG-8.03, item 6.1 - Tipo "+p.type+": "+TYPE_DESC[p.type].replace(/<[^>]+>/g,""),{s:9,c:GRAY,i:1});
   await evid(p.generalFiles,"abertura do projeto");
-  for(let i=0;i<planningFields.length;i++){const f=planningFields[i],x=p.planning?.[f[0]]||{};sub(P+"1."+(i+2)+" "+clean(f[1])+"  (PG-8.03, item "+(PREF[f[0]]||"6.3")+")");
-   para("Requisito: "+f[2],{s:9,c:GRAY,i:1});table(["Responsável pelo registro","Data de realização","Última atualização"],[[x.owner||"-",D(x.date),x.updated?D(x.updated):"-"]],[70,50,CW-120]);
-   h3("Descrição, definições e decisões registradas");para(x.text||"Sem registro de texto neste bloco.",{c:x.text?undefined:GRAY,i:!x.text});await evid(x.files,clean(f[1]))}
-  sub(P+"1.11 Conclusão do planejamento  (PG-8.03, item 6.5.1)");para(p.planning?.conclusion||"Conclusão do planejamento não registrada.",{c:p.planning?.conclusion?undefined:GRAY,i:!p.planning?.conclusion});await evid(p.planning?.conclusionFiles,"conclusão do planejamento");
-  if(PLAN){
-  sub(P+"1.12 Situação do planejamento");
-  const semE=planningFields.filter(f=>!(p.planning?.[f[0]]?.files||[]).length);
-  table(["Indicador","Resultado"],[["Blocos de planejamento com registro",pl.length+" de "+planningFields.length],["Blocos com evidências anexadas",(planningFields.length-semE.length)+" de "+planningFields.length],["Conclusão do planejamento",p.planning?.conclusion?"Registrada":"Não registrada"],["Anexos incorporados",files.length]],[70,CW-70]);
-  const pd=[];planningFields.filter(f=>!p.planning?.[f[0]]?.text).forEach(f=>pd.push([clean(f[1]),"Sem registro de texto"]));semE.forEach(f=>pd.push([clean(f[1]),"Sem evidências anexadas"]));if(!p.planning?.conclusion)pd.push(["Conclusão do planejamento","Sem registro"]);
-  h3("Pendências");if(pd.length)table(["Item","Situação"],pd,[70,CW-70]);else para("Não há pendências identificadas no planejamento.",{b:1,s:9.5,c:OK});
-  para("Documento gerado automaticamente a partir dos registros do sistema em "+gen+"; reflete as informações lançadas pelos responsáveis.",{s:9,i:1,c:GRAY});
-  need(40);y+=14;[["Responsável pelo desenvolvimento",p.owner||""],["Aprovação do planejamento",""]].forEach((r,i)=>{const x=M+i*(CW/2+3),w=CW/2-6;d.setDrawColor(90,96,110);d.line(x,y,x+w,y);txt(r[0],x,y+4.5,{s:8.5,c:GRAY});if(r[1])txt(r[1],x,y+9,{s:9,b:1})});y+=16;txt("Data da impressão: "+now.toLocaleDateString("pt-BR"),M,y,{s:9});
-  continue}
   }
   /* ===== RELATÓRIO SÓ DA ANÁLISE AMBIENTAL (ISO 14001) ===== */
   if(AMB){
@@ -1390,7 +1347,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   if(!only){
   /* ===== 3 CONTROLES COMPLEMENTARES ===== */
   S(3,"Controles complementares");
-  para("Além do planejamento e do cronograma, o projeto possui controles complementares que registram aspectos específicos do desenvolvimento. Cada controle é detalhado, com seus registros e evidências, nas seções 4 e 5.",{s:9.5});
+  para("Além do cronograma, o projeto possui controles complementares que registram aspectos específicos do desenvolvimento. Cada controle é detalhado, com seus registros e evidências, nas seções 4 e 5.",{s:9.5});
   table(["Controle","Finalidade (PG-8.03)","Registros no projeto","Detalhado em"],[["Desenvolvimento de fornecedores","Item 6.6: acionar o Desenvolvimento previamente, controlar amostras, homologação e estoque mínimo de 30 dias de consumo.",(p.suppliers||[]).length+" registro(s)","Seção "+P+"4"],["Análise ambiental","Item 6.7: considerar questões ambientais e priorizar matérias-primas e insumos de menor impacto.",(p.environment||[]).length+" registro(s)","Seção "+P+"5"]],[40,CW-92,28,24]);
   [["Fornecedores",p.suppliers],["Análise ambiental",p.environment]].forEach(([t,a])=>{h3("Registros de "+t);if(!(a||[]).length)para("Nenhum registro cadastrado.",{i:1,c:GRAY,s:9});else table(["Registro","Responsável","Data","Anexos"],a.map(r=>[r.title||(r.values||[])[0]||"-",r.owner,D(r.date),(r.files||[]).length]),[80,40,24,CW-144])});
   /* ===== 4 FORNECEDORES ===== */
@@ -1418,13 +1375,11 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   const apF=(p.approvals||[]).filter(a=>a.kind==="Conclusão do projeto"),stt=n=>p.stages.find(s=>s.number===n)?.status||"-",sit=(ok,pa)=>ok?"Registrado":(pa?"Parcial":"Não registrado");
   table(["Requisito","Item","Situação","Registro encontrado"],[
    ["Enquadramento do tipo de desenvolvimento","6.1",sit(!!p.type),"Tipo "+p.type],
-   ["Planejamento F-8.03.01 (blocos)","6.3 / 6.4",sit(pl.length>=planningFields.length,pl.length>0),pl.length+" de "+planningFields.length+" blocos com registro"],
-   ["Conclusão do planejamento","6.5.1",sit(!!p.planning?.conclusion),p.planning?.conclusion?"Registrada":"Sem registro"],
-   ["Cronograma de desenvolvimento","6.4.9",sit(cd.length===p.stages.length,cd.length>0),cd.length+" de "+p.stages.length+" etapas concluídas; "+chk+" de "+chkT+" verificações"],
-   ["Lote piloto (produção e validação)","6.5.3",sit(stt("18")==="Concluída"&&stt("19")==="Concluída",stt("18")!=="Não iniciada"),"Etapa 18: "+stt("18")+" / Etapa 19: "+stt("19")],
+   ["Cronograma de desenvolvimento","6.3 / 6.4.4",sit(cd.length===p.stages.length,cd.length>0),cd.length+" de "+p.stages.length+" etapas concluídas; "+chk+" de "+chkT+" verificações"],
+   ["Lote piloto (produção e validação)","6.5.3",sit(stt("13")==="Concluída"&&stt("14")==="Concluída",stt("13")!=="Não iniciada"),"Etapa 13: "+stt("13")+" / Etapa 14: "+stt("14")],
    ["Desenvolvimento de fornecedores","6.6",sit((p.suppliers||[]).length>0),(p.suppliers||[]).length+" registro(s)"],
    ["Análise ambiental","6.7",sit((p.environment||[]).length>0),(p.environment||[]).length+" registro(s)"],
-   ["Aprovação final pela diretoria","6.5.1",sit(apF.some(a=>a.decision==="Aprovado"),apF.length>0),apF.length?apF.map(a=>a.decision).join(", "):"Sem registro"],
+   ["Aprovação final pela diretoria (Etapa 15)","6.5.1",sit(apF.some(a=>a.decision==="Aprovado"),apF.length>0),apF.length?apF.map(a=>a.decision).join(", "):"Sem registro"],
    ["Evidências anexadas","-",sit(files.length>0),files.length+" arquivo(s)"]],[58,22,26,CW-106]);
   sub(P+"6.3 Registros gerados e rastreabilidade dos anexos");
   const left=files.filter(f=>!origin.has(fk(f)));left.forEach(f=>origin.set(fk(f),"6.4 Anexos adicionais"));
@@ -1436,10 +1391,10 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   if(left.length)await evid(left,"anexos adicionais");else para("Todos os anexos do projeto foram apresentados nas seções correspondentes.",{s:9.5});
   sub(P+"6.5 Pendências");
   const pend=[];p.stages.filter(s=>s.status!=="Concluída").forEach(s=>pend.push(["Etapa "+s.number+" - "+s.name,"Status: "+s.status+"; "+s.checks.filter(c=>!c.done).length+" verificação(ões) pendente(s)"]));p.stages.filter(s=>s.status==="Concluída"&&s.checks.some(c=>!c.done)).forEach(s=>pend.push(["Etapa "+s.number+" - "+s.name,"Concluída com verificação(ões) não marcada(s): "+s.checks.filter(c=>!c.done).map(c=>c.label).join("; ")]));
-  planningFields.filter(f=>!p.planning?.[f[0]]?.text).forEach(f=>pend.push(["Planejamento - "+clean(f[1]),"Sem registro de texto"]));if(!p.planning?.conclusion)pend.push(["Conclusão do planejamento","Sem registro"]);if(!apF.some(a=>a.decision==="Aprovado"))pend.push(["Aprovação de conclusão do projeto","Não há aprovação com decisão Aprovado registrada"]);
+  if(!apF.some(a=>a.decision==="Aprovado"))pend.push(["Aprovação de conclusão do projeto","Não há aprovação com decisão Aprovado registrada"]);
   if(pend.length)table(["Item","Situação"],pend,[70,CW-70]);else para("Não há pendências identificadas nos registros do sistema.",{b:1,s:9.5,c:OK});
   sub(P+"6.6 Resultados finais");
-  table(["Indicador","Resultado"],[["Status do projeto",p.status],["Etapas concluídas",cd.length+" de "+p.stages.length+" ("+progress(p)+"%)"],["Verificações atendidas",chk+" de "+chkT],["Blocos de planejamento registrados",pl.length+" de "+planningFields.length],["Primeira / última conclusão de etapa",conc.length?D(conc[0].end)+" / "+D(conc[conc.length-1].end):"-"],["Aprovações registradas",(p.approvals||[]).length],["Anexos do projeto",files.length],["Ações no histórico",(p.events||[]).length]],[70,CW-70]);
+  table(["Indicador","Resultado"],[["Status do projeto",p.status],["Etapas concluídas",cd.length+" de "+p.stages.length+" ("+progress(p)+"%)"],["Verificações atendidas",chk+" de "+chkT],["Primeira / última conclusão de etapa",conc.length?D(conc[0].end)+" / "+D(conc[conc.length-1].end):"-"],["Aprovações registradas",(p.approvals||[]).length],["Anexos do projeto",files.length],["Ações no histórico",(p.events||[]).length]],[70,CW-70]);
   /* ===== 7 APROVAÇÕES ===== */
   S(7,"Aprovações");
   const apr=[...(p.approvals||[])].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
@@ -1448,7 +1403,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   else{table(["Data","Tipo","Decisão","Aprovador (função)"],apr.map(a=>[D(a.date),a.kind,a.decision,(a.approver||"-")+(a.role?" ("+a.role+")":"")]),[22,56,32,CW-110]);
    for(let i=0;i<apr.length;i++){const a=apr[i];sub(P+"7."+(i+2)+" "+a.kind+" - "+a.decision);table(["Campo","Registro"],[["Tipo de aprovação",a.kind],["Decisão (aceite/recusa)",a.decision],["Aprovador",a.approver||"-"],["Função / área",a.role||"-"],["Data",D(a.date)],["Parecer / justificativa",a.comment||"Não registrado"]],[50,CW-50]);await evid(a.files,"aprovação "+a.kind)}}
   sub(P+"7."+(apr.length+2)+" Etapas de validação e aprovação no cronograma");
-  const ev2=p.stages.filter(s=>["19","20","21"].includes(s.number));table(["Nº","Etapa","Status","Responsável","Conclusão"],ev2.map(s=>[s.number,s.name,s.status,s.responsible,D(s.end)]),[10,70,30,36,CW-146]);para("Os pareceres e evidências dessas etapas constam na seção "+P+"2.",{i:1,c:GRAY,s:8.5});
+  const ev2=p.stages.filter(s=>["14","15","16"].includes(s.number));table(["Nº","Etapa","Status","Responsável","Conclusão"],ev2.map(s=>[s.number,s.name,s.status,s.responsible,D(s.end)]),[10,70,30,36,CW-146]);para("Os pareceres e evidências dessas etapas constam na seção "+P+"2.",{i:1,c:GRAY,s:8.5});
   sub(P+"7."+(apr.length+3)+" Situação final");
   const ap=apr.filter(a=>a.kind==="Conclusão do projeto").pop();
   para("Situação do projeto na data de geração: "+p.status+"."+(ap?"\nAprovação da conclusão do projeto: "+ap.decision+" por "+(ap.approver||"-")+(ap.role?" ("+ap.role+")":"")+" em "+D(ap.date)+"."+(ap.comment?"\nParecer: "+ap.comment:""):"\nAprovação de conclusão do projeto: não registrada até a data de geração."));
@@ -1458,9 +1413,9 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
  }
  /* ---- sumário ---- */
  d.setPage(2);const sp=Math.min(7,225/Math.max(toc.length,1)),fs=toc.length>32?8.5:10;let ty=44;toc.forEach(e=>{const x=M+(e.l-1)*(multi?7:0);txt(e.t,x,ty,{b:e.l===1,s:e.l===1?fs:fs-.5,c:e.l===1?NAVY:[50,55,70]});txt(String(e.p),W-M,ty,{s:fs,a:"right",c:NAVY});d.setDrawColor(215,220,230);d.setLineWidth(.2);d.line(x+d.getTextWidth(T(e.t))+2,ty,W-M-8,ty);ty+=sp});
- const N=pg();for(let i=2;i<=N;i++){d.setPage(i);d.addImage(LOGO,"PNG",M,6,24,6.9);txt((PLAN?"Relatório do Planejamento":AMB?"Relatório da Análise Ambiental - ISO 14001":only?"Relatório do Cronograma":"Relatório de Desenvolvimento do Projeto")+(CRON?" | R-8.03.01 | PG-8.03":" | F-8.03.01 | PG-8.03 Rev. 08"),W-M,10,{s:8,c:GRAY,a:"right"});d.setDrawColor(...BLUE);d.setLineWidth(.5);d.line(M,15,W-M,15);d.setDrawColor(200,205,215);d.setLineWidth(.2);d.line(M,H-13,W-M,H-13);txt("Hi Tech Automotive - Gerado em "+gen,M,H-8,{s:8,c:GRAY});txt("Página "+i+" de "+N,W-M,H-8,{s:8,c:GRAY,a:"right"})}
+ const N=pg();for(let i=2;i<=N;i++){d.setPage(i);d.addImage(LOGO,"PNG",M,6,24,6.9);txt((AMB?"Relatório da Análise Ambiental - ISO 14001":only?"Relatório do Cronograma":"Relatório de Desenvolvimento do Projeto")+(CRON?" | R-8.03.01 | PG-8.03":" | PG-8.03 Rev. 09"),W-M,10,{s:8,c:GRAY,a:"right"});d.setDrawColor(...BLUE);d.setLineWidth(.5);d.line(M,15,W-M,15);d.setDrawColor(200,205,215);d.setLineWidth(.2);d.line(M,H-13,W-M,H-13);txt("Hi Tech Automotive - Gerado em "+gen,M,H-8,{s:8,c:GRAY});txt("Página "+i+" de "+N,W-M,H-8,{s:8,c:GRAY,a:"right"})}
  const nme=multi?"Todos":String(list[0].code||list[0].name).replace(/[^a-zA-Z0-9_-]+/g,"_").slice(0,40);
- d.save((PLAN?"Relatorio_Planejamento_F-8.03.01_":AMB?"Relatorio_Analise_Ambiental_ISO14001_":only?"Relatorio_Cronograma_":"Relatorio_Auditoria_")+nme+"_"+dateNow()+".pdf");
+ d.save((AMB?"Relatorio_Analise_Ambiental_ISO14001_":only?"Relatorio_Cronograma_":"Relatorio_Auditoria_")+nme+"_"+dateNow()+".pdf");
  try{localStorage.setItem("hitech_last_report",now.toISOString())}catch(e){}
  setSync("Relatório gerado")
  }catch(e){console.error(e);setSync("Erro ao gerar relatório",true);alert("Não foi possível gerar o relatório: "+(e.message||e))}
