@@ -584,7 +584,6 @@ const STAGES = [
 "Avaliar a necessidade de válvula, gatilho ou dosador",
 "#Tampa – Pesquisa de fornecedores",
 "Identificar fornecedores",
-"Solicitar modelos disponíveis",
 "Solicitar desenho técnico",
 "#Tampa – Recebimento e testes",
 "Solicitar amostras",
@@ -656,10 +655,8 @@ const STAGES = [
 "Informar dimensões e formato do rótulo",
 "#Análise da primeira versão",
 "Registrar a data de recebimento da primeira versão",
-"Avaliar a disposição das informações",
 "Avaliar a legibilidade",
 "Conferir as cores",
-"Registrar as correções",
 "#Conferência técnica da arte final",
 "Registrar a data de recebimento da arte final",
 "Conferir características, modo de uso, dosagem e aplicações",
@@ -1043,6 +1040,7 @@ if(/quando a solicitação foi feita/.test(l))return[{k:"r",l:"Forma (reunião, 
 if(/prevista.*conclus|prevista para conclus/.test(l))return[R,D("p","Data prevista"),D("c","Data de conclusão")];
 if(/^registrar data e local/.test(l))return[D("d","Data"),{k:"r",l:"Local",t:"text"}];
 if(/\bdata\b|previsão de chegada|chegada da amostra|^registrar o recebimento/.test(l))return[D("d","Data")];
+if(/^Registrar a quantidade recebida$/.test(L))return[{k:"r",l:"Quantidade recebida",t:"text"}];
 if(/quantidade/.test(l)&&!/conferir identificação/.test(l)&&!/frascos por caixa/.test(l)&&/^(definir|registrar|solicitar)/.test(l))return[{k:"r",l:"Quantidade",t:"text"}];
 if(/^(Identificar (quem|o solicitante|o responsável|os responsáveis|o departamento|o produto|o código|o lote|o modelo recebido)|Registrar (o departamento|o responsável|o fornecedor|o nome comercial|o fornecedor gráfico)|Informar (o produto|o código|o volume|produto e código)|Definir (o nome técnico|o código interno|a categoria|a aplicação|o volume|o prazo|a cor|o material|o modelo|o peso|os responsáveis)|Determinar a aplicação)/i.test(L))return[{k:"r",l:"Resposta",t:"text"}];
 return[R]}
@@ -1051,7 +1049,7 @@ const NO_ATTACH_01=/^(Identificar quem percebeu|Identificar o departamento|Regis
 const ATTACH_RX=/^(Solicitar|Encaminhar|Aprovar|Obter a aprovação|Registrar a aprovação|Validar|Formalizar|Arquivar|Receber|Enviar|Liberar|Realizar|Testar|Analisar|Conferir|Revisar|Elaborar|Confirmar|Consolidar|Organizar|Cadastrar|Disponibilizar|Documentar|Pesquisar|Levantar|Comparar|Anexar|Registrar (o recebimento|a chegada|a data de (recebimento|envio|coleta|aprovação|liberação|lançamento)|a data efetiva|a data prevista e a data de recebimento|os resultados|as correções|cada versão|eventuais avarias|ocorrências|a quantidade recebida|observações)|Verificar (a compatibilidade|a aplicação|a coerência|o fechamento|a qualidade|o prazo)|Avaliar (o fechamento|a vedação|a resistência|o empilhamento|o manuseio|a proteção|a disposição|a legibilidade)|Identificar características e diferenciais)|^Arte final e prova|anexar/i;
 const NO_EVID_LBL=/^(Quantidade|Responsável|Departamento|Código do produto|Data|Quando|Local)$/;
 function needsEvidence(c,s){const fs=fieldSpec(c,s);if(/^Solicitar (a ficha técnica|a FDS|o certificado)/.test(c.label))return true;if(/^Verificar o prazo de fabricação/.test(c.label))return false;if(fs.length&&fs.every(f=>f.t==="date"||NO_EVID_LBL.test(f.l)))return false;return true}
-const NO_ATTACH_ITEMS=[["01", "Registrar de que forma e quando a solicitação foi feita (reunião, WhatsApp, e-mail etc.)", ""], ["01", "Informar se existe produto semelhante no mercado", ""], ["02", "Levantar faixas de preço", ""], ["05", "Comparar características técnicas divulgadas", ""], ["07", "Conferir as dimensões", "Frasco – Recebimento da amostra"], ["07", "Registrar o recebimento", "Tampa – Recebimento e testes"], ["07", "Verificar a compatibilidade com o gargalo", ""], ["07", "Realizar testes de rosqueamento", ""], ["07", "Avaliar o fechamento", ""], ["07", "Avaliar a vedação", ""], ["07", "Realizar teste de vazamento", ""], ["07", "Avaliar a resistência", ""], ["07", "Avaliar o empilhamento", ""], ["07", "Avaliar o manuseio", ""], ["07", "Solicitar ajustes, quando necessário", "Caixa – Testes e aprovação"], ["08", "Avaliar a disposição das informações", ""], ["08", "Avaliar a legibilidade", ""], ["08", "Conferir as cores", ""], ["08", "Conferir se todas as correções foram executadas", ""], ["09", "Elaborar a ficha técnica (registrar data prevista e data de conclusão)", ""], ["10", "Elaborar a FDS (registrar data prevista e data de conclusão)", ""], ["10", "Revisar e conferir as informações", ""], ["14", "Registrar a data de coleta", ""], ["16", "Confirmar que as condições de produção estão aprovadas", ""], ["16", "Registrar a data de liberação", ""], ["17", "Disponibilizar as informações técnicas", ""]];
+const NO_ATTACH_ITEMS=[["01", "Registrar de que forma e quando a solicitação foi feita (reunião, WhatsApp, e-mail etc.)", ""], ["01", "Informar se existe produto semelhante no mercado", ""], ["02", "Levantar faixas de preço", ""], ["05", "Comparar características técnicas divulgadas", ""], ["07", "Conferir as dimensões", "Frasco – Recebimento da amostra"], ["07", "Registrar o recebimento", "Tampa – Recebimento e testes"], ["07", "Verificar a compatibilidade com o gargalo", ""], ["07", "Realizar testes de rosqueamento", ""], ["07", "Avaliar o fechamento", ""], ["07", "Avaliar a vedação", ""], ["07", "Realizar teste de vazamento", ""], ["07", "Avaliar a resistência", ""], ["07", "Avaliar o empilhamento", ""], ["07", "Avaliar o manuseio", ""], ["07", "Solicitar ajustes, quando necessário", "Caixa – Testes e aprovação"], ["08", "Avaliar a legibilidade", ""], ["08", "Conferir as cores", ""], ["08", "Conferir se todas as correções foram executadas", ""], ["09", "Elaborar a ficha técnica (registrar data prevista e data de conclusão)", ""], ["10", "Elaborar a FDS (registrar data prevista e data de conclusão)", ""], ["10", "Revisar e conferir as informações", ""], ["14", "Registrar a data de coleta", ""], ["16", "Confirmar que as condições de produção estão aprovadas", ""], ["16", "Registrar a data de liberação", ""], ["17", "Disponibilizar as informações técnicas", ""], ["07", "Registrar a quantidade recebida", "Frasco – Recebimento da amostra"], ["07", "Solicitar amostras", "Tampa – Recebimento e testes"]];
 function noAttachItem(c,s){return NO_ATTACH_ITEMS.some(([n,l,g])=>n===s.number&&l===c.label&&(!g||g===(c.group||"")))}
 function wantsAttach(c,s){if(noAttachItem(c,s))return false;return s.number==="01"?!NO_ATTACH_01.test(c.label):ATTACH_RX.test(c.label)}
 function qAttachHTML(i,j,c,s){if(!wantsAttach(c,s))return "";return`<div class="qattach"><label>📎 Anexar evidência</label><input type="file" id="s_qf_${i}_${j}" multiple>${(c.files||[]).length?fileList(c.files):""}</div>`}
