@@ -425,6 +425,14 @@ html[data-theme=dark] .rviewmeta{color:#8a9ab2}
 .sbvideo.off video{display:none}
 .app.sbcompact .sbvideo{visibility:hidden}
 @media(max-width:900px){.sbvideo{display:none}}
+
+.reqs{display:flex;flex-direction:column;gap:8px;align-items:flex-start;width:100%}
+.reqs table{width:100%;border-collapse:collapse;font-size:13px}
+.reqs th{text-align:left;font-size:11.5px;font-weight:700;color:#718096;padding:0 6px 4px}
+.reqs td{padding:3px}
+.reqs td:nth-child(1){width:30%}.reqs td:nth-child(2){width:40%}.reqs td:nth-child(3){width:26%}.reqs td:nth-child(4){width:1%}
+.reqs td input{width:100%}
+html[data-theme=dark] .reqs th{color:#8a9ab2}
 </style>
 <script>try{if(localStorage.getItem("hitech_theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 </head>
@@ -552,19 +560,16 @@ const STAGES = [
 "Registrar a previsão de chegada",
 "Registrar a chegada da amostra",
 "Encaminhar a amostra ao Laboratório para avaliação",
+"#Avaliação da amostra pelo Laboratório",
+"Registrar o relatório da amostra avaliada enviado pelo Laboratório",
 "#Requisitos de desempenho (padrão exigido no recebimento do lote piloto)",
-"Definir o padrão de cor",
-"Definir o padrão de pH",
-"Definir o padrão de densidade",
-"Definir o padrão de viscosidade, quando aplicável",
-"Definir o ponto de ebulição, quando aplicável",
-"Definir o ponto de fulgor, quando aplicável"
+"Definir os ensaios e os padrões exigidos no recebimento do lote piloto"
 ]
 ],
 [
 "05",
 "Análise de concorrentes",
-"Objetivo: comparar o produto em desenvolvimento com referências comerciais e identificar oportunidades de diferenciação. Responsáveis: pela compra, pelo recebimento, pela análise e pela validação técnica.",
+"Objetivo: comparar, por escrito, o produto em desenvolvimento com as referências comerciais do mercado e registrar os diferenciais que o produto Hi Tech pode proporcionar em relação aos concorrentes. A avaliação técnica da amostra é feita na Etapa 04.",
 [
 "#Comparação com concorrentes",
 "Selecionar produtos concorrentes",
@@ -573,14 +578,7 @@ const STAGES = [
 "Comparar características técnicas divulgadas",
 "Comparar aplicações e benefícios",
 "Avaliar posicionamento comercial",
-"Identificar diferenciais da Hi Tech",
-"#Amostra para comparação",
-"Definir a quantidade de amostra a ser comprada",
-"Solicitar o pedido de compra",
-"Registrar a data do pedido",
-"Registrar a previsão de chegada",
-"Registrar a chegada da amostra",
-"Encaminhar a amostra ao Laboratório para avaliação"
+"Identificar diferenciais da Hi Tech"
 ]
 ],
 [
@@ -863,7 +861,8 @@ const STAGES = [
 ];
 function buildChecks(raw){let g="";return raw.reduce((o,x)=>{if(x[0]==="#")g=x.slice(1).trim();else o.push({label:x,done:false,group:g});return o},[])}
 const OLD2NEW={"01":"01","02":"02","03":"03","04":"04","09":"05","10":"06","12":"07","13":"08","14":"09","15":"10","16":"11","17":"12","18":"13","19":"14","20":"15","21":"16","22":"17","23":"18"};
-function syncStage01(p){if(!p||!Array.isArray(p.stages))return p;STAGES.forEach(def=>{const st=p.stages.find(x=>x.number===def[0]);if(!st)return;const prev={},used=new Set();(st.checks||[]).forEach(c=>prev[c.label]=c);st.checks=buildChecks(def[3]).map(c=>{const o=prev[c.label];if(!o)return c;used.add(c.label);return{...c,done:!!o.done,v:o.v,files:o.files}});Object.keys(prev).filter(l=>!used.has(l)).forEach(l=>(prev[l].files||[]).forEach(f=>(st.files=st.files||[]).push(f)))});return p}
+function syncStage01(p){if(!p||!Array.isArray(p.stages))return p;STAGES.forEach(def=>{const st=p.stages.find(x=>x.number===def[0]);if(!st)return;const prev={},used=new Set();(st.checks||[]).forEach(c=>prev[c.label]=c);st.checks=buildChecks(def[3]).map(c=>{const o=prev[c.label];if(!o)return c;used.add(c.label);return{...c,done:!!o.done,v:o.v,files:o.files}});if(def[0]==="04"){const rq=st.checks.find(c=>/^Definir os ensaios e os padrões/.test(c.label));const OLDREQ=[["Definir o padrão de cor","Cor"],["Definir o padrão de pH","pH"],["Definir o padrão de densidade","Densidade"],["Definir o padrão de viscosidade, quando aplicável","Viscosidade"],["Definir o ponto de ebulição, quando aplicável","Ponto de ebulição"],["Definir o ponto de fulgor, quando aplicável","Ponto de fulgor"]];if(rq&&!(rq.v&&rq.v.t)){const rows=[];let dn=false;OLDREQ.forEach(([lb,nm])=>{const o=prev[lb];if(!o)return;used.add(lb);(o.files||[]).forEach(f=>(st.files=st.files||[]).push(f));if(o.done)dn=true;const a=((o.v||{}).r||"").trim();if(a&&!/^(n\/?a|na|não se aplica|nao se aplica|-)$/i.test(a))rows.push({t:nm,s:a,m:""})});if(rows.length||dn){rq.v={t:JSON.stringify(rows)};rq.done=dn}}}
+const gone=Object.keys(prev).filter(l=>!used.has(l)).map(l=>{const vv=Object.values(prev[l].v||{}).map(x=>String(x||"").trim()).filter(Boolean);return vv.length?"- "+l+": "+vv.map(x=>/^\d{4}-\d\d-\d\d$/.test(x)?x.split("-").reverse().join("/"):x).join(" | ").replace(/\n+/g," / "):""}).filter(x=>x&&!(st.notes||"").includes(x));if(gone.length)st.notes=((st.notes||"").trim()?(st.notes||"").trim()+"\n\n":"")+"Registros de itens retirados do cronograma:\n"+gone.join("\n");Object.keys(prev).filter(l=>!used.has(l)).forEach(l=>(prev[l].files||[]).forEach(f=>(st.files=st.files||[]).push(f)))});return p}
 function migrateStages(p){if(!p||!Array.isArray(p.stages)||p.stagesModel==="v2")return p;const old=p.stages;p.stages=STAGES.map(s=>{const o=old.find(x=>OLD2NEW[x.number]===s[0]),ch=buildChecks(s[3]);if(!o)return{number:s[0],name:s[1],status:"Não iniciada",checks:ch,notes:"",start:"",end:"",plannedStart:"",plannedEnd:"",delayCause:"",delayNote:"",replans:[],responsible:"",files:[]};const prev={};(o.checks||[]).forEach(c=>prev[c.label]=c.done);return{...o,number:s[0],name:s[1],checks:ch.map(c=>({...c,done:!!prev[c.label]}))}});p.legacyStages=[...(p.legacyStages||[]),...old.filter(x=>!OLD2NEW[x.number])];p.stagesModel="v2";return p}
 const ORIGINS=["Solicitação de cliente","Solicitação da Diretoria","Solicitação do setor Comercial","Ampliação da linha de produtos","Pesquisa de mercado","Oportunidade comercial","Necessidade técnica identificada pelo Desenvolvimento","Melhoria ou substituição de produto existente","Necessidade de terceirização","Outra origem"];
 const TYPES=[["A","Novo produto"],["B","Produto existente no mercado"],["C","Alteração de embalagem"],["D1","Alteração de matéria-prima"],["D2","Alteração de característica do produto acabado"],["E","Terceirização"]];
@@ -1048,6 +1047,7 @@ function identHTML(p){return `<div class="panel"><div class="panelhead"><h2>Iden
 function stagesHTML(p){return `<div class="panel"><div class="panelhead"><h2>Cronograma de desenvolvimento</h2><div class="toolbar"><span class="badge blue">${doneCount(p)}/${STAGES.length} concluídas</span><button class="btn small" id="btnReportCrono" onclick="gerarRelatorioGeral({only:'cronograma',projectId:currentId,btnId:'btnReportCrono'})" title="Gera o PDF só com o cronograma e as evidências, usando o que já está salvo">⇩ Gerar relatório do cronograma</button><button class="btn primary small" onclick="planDeadlines()">◷ Planejar prazos</button></div></div><div class="panelbody">${deadlineSummary(p)}<div class="notice">Cada etapa possui responsável, datas previstas e reais, status, checklist, observações e anexos. As ${STAGES.length} etapas são uma estrutura de acompanhamento do projeto; os controles obrigatórios do PG-8.03 permanecem vinculados aos itens correspondentes.</div>${p.stages.map((s,i)=>stageHTML(s,i)).join("")}</div></div>`}
 const SEL_APROV=["Aprovado","Reprovado","Correção solicitada"],SEL_SN=["Sim","Não"];
 function fieldSpec(c,s){const L=c.label,l=L.toLowerCase(),R={k:"r",l:"Resposta / registro",t:"area"},D=(k,l)=>({k,l,t:"date"});
+if(s.number==="04"){if(/^Registrar o relatório da amostra avaliada/.test(L))return[D("d","Data do relatório"),{k:"r",l:"Resultado / conclusão do Laboratório",t:"area"}];if(/^Definir os ensaios e os padrões/.test(L))return[{k:"t",l:"Ensaios e padrões",t:"reqs"}]}
 if(s.number==="01"){const T=(lb)=>({k:"r",l:lb,t:"text"}),PC=[D("p","Data de previsão"),D("c","Data de conclusão")];
 if(/^Identificar quem percebeu/.test(L))return[T("Responsável")];
 if(/^Identificar o departamento/.test(L))return[T("Departamento")];
@@ -1069,16 +1069,26 @@ if(/^Registrar a quantidade recebida$/.test(L))return[{k:"r",l:"Quantidade receb
 if(/quantidade/.test(l)&&!/conferir identificação/.test(l)&&!/frascos por caixa/.test(l)&&/^(definir|registrar|solicitar)/.test(l))return[{k:"r",l:"Quantidade",t:"text"}];
 if(/^(Identificar (quem|o solicitante|o responsável|os responsáveis|o departamento|o produto|o código|o lote|o modelo recebido)|Registrar (o departamento|o responsável|o fornecedor|o nome comercial|o fornecedor gráfico)|Informar (o produto|o código|o volume|produto e código)|Definir (o nome técnico|o código interno|a categoria|a aplicação|o volume|o prazo|a cor|o material|o modelo|o peso|os responsáveis)|Determinar a aplicação)/i.test(L))return[{k:"r",l:"Resposta",t:"text"}];
 return[R]}
-function answerText(c,s){const v=c.v||{};return fieldSpec(c,s).map(f=>{let x=v[f.k];if(!x)return"";if(f.t==="date")x=x.replace(/^(\d{4})-(\d\d)-(\d\d)$/,"$3/$2/$1");return(fieldSpec(c,s).length>1?f.l+": ":"")+x}).filter(Boolean).join("; ")}
+function answerText(c,s){const v=c.v||{};return fieldSpec(c,s).map(f=>{let x=v[f.k];if(!x)return"";if(f.t==="reqs"){x=reqsText(x);if(!x)return""}if(f.t==="date")x=x.replace(/^(\d{4})-(\d\d)-(\d\d)$/,"$3/$2/$1");return(fieldSpec(c,s).length>1?f.l+": ":"")+x}).filter(Boolean).join("; ")}
 const NO_ATTACH_01=/^(Identificar quem percebeu|Identificar o departamento|Registrar o código existente|Definir o responsável|Identificar a origem|Descrever a justificativa|Classificar o tipo|Identificar as áreas|Identificar possíveis limitações)/;
 const ATTACH_RX=/^(Solicitar|Encaminhar|Aprovar|Obter a aprovação|Registrar a aprovação|Validar|Formalizar|Arquivar|Receber|Enviar|Liberar|Realizar|Testar|Analisar|Conferir|Revisar|Elaborar|Confirmar|Consolidar|Organizar|Cadastrar|Disponibilizar|Documentar|Pesquisar|Levantar|Comparar|Anexar|Registrar (o recebimento|a chegada|a data de (recebimento|envio|coleta|aprovação|liberação|lançamento)|a data efetiva|a data prevista e a data de recebimento|os resultados|as correções|cada versão|eventuais avarias|ocorrências|a quantidade recebida|observações)|Verificar (a compatibilidade|a aplicação|a coerência|o fechamento|a qualidade|o prazo)|Avaliar (o fechamento|a vedação|a resistência|o empilhamento|o manuseio|a proteção|a disposição|a legibilidade)|Identificar características e diferenciais)|^Arte final e prova|anexar/i;
 const NO_EVID_LBL=/^(Quantidade|Responsável|Departamento|Código do produto|Data|Quando|Local)$/;
-function needsEvidence(c,s){const fs=fieldSpec(c,s);if(/^Solicitar (a ficha técnica|a FDS|o certificado)/.test(c.label))return true;if(/^Verificar o prazo de fabricação/.test(c.label))return false;if(fs.length&&fs.every(f=>f.t==="date"||NO_EVID_LBL.test(f.l)))return false;return true}
-const NO_ATTACH_ITEMS=[["01", "Registrar de que forma e quando a solicitação foi feita (reunião, WhatsApp, e-mail etc.)", ""], ["01", "Informar se existe produto semelhante no mercado", ""], ["02", "Levantar faixas de preço", ""], ["05", "Comparar características técnicas divulgadas", ""], ["07", "Conferir as dimensões", "Frasco – Recebimento da amostra"], ["07", "Registrar o recebimento", "Tampa – Recebimento e testes"], ["07", "Verificar a compatibilidade com o gargalo", ""], ["07", "Realizar testes de rosqueamento", ""], ["07", "Avaliar o fechamento", ""], ["07", "Avaliar a vedação", ""], ["07", "Realizar teste de vazamento", ""], ["07", "Avaliar a resistência", ""], ["07", "Avaliar o empilhamento", ""], ["07", "Avaliar o manuseio", ""], ["07", "Solicitar ajustes, quando necessário", "Caixa – Testes e aprovação"], ["08", "Avaliar a legibilidade", ""], ["08", "Conferir as cores", ""], ["08", "Conferir se todas as correções foram executadas", ""], ["09", "Elaborar a ficha técnica (registrar data prevista e data de conclusão)", ""], ["10", "Elaborar a FDS (registrar data prevista e data de conclusão)", ""], ["10", "Revisar e conferir as informações", ""], ["14", "Registrar a data de coleta", ""], ["16", "Confirmar que as condições de produção estão aprovadas", ""], ["16", "Registrar a data de liberação", ""], ["17", "Disponibilizar as informações técnicas", ""], ["07", "Registrar a quantidade recebida", "Frasco – Recebimento da amostra"], ["07", "Solicitar amostras", "Tampa – Recebimento e testes"]];
+function needsEvidence(c,s){const fs=fieldSpec(c,s);if(s.number==="05"||fs.some(f=>f.t==="reqs"))return false;if(/^Solicitar (a ficha técnica|a FDS|o certificado)/.test(c.label))return true;if(/^Verificar o prazo de fabricação/.test(c.label))return false;if(fs.length&&fs.every(f=>f.t==="date"||NO_EVID_LBL.test(f.l)))return false;return true}
+const NO_ATTACH_ITEMS=[["01", "Registrar de que forma e quando a solicitação foi feita (reunião, WhatsApp, e-mail etc.)", ""], ["01", "Informar se existe produto semelhante no mercado", ""], ["02", "Levantar faixas de preço", ""], ["05", "Comparar características técnicas divulgadas", ""], ["07", "Conferir as dimensões", "Frasco – Recebimento da amostra"], ["07", "Registrar o recebimento", "Tampa – Recebimento e testes"], ["07", "Verificar a compatibilidade com o gargalo", ""], ["07", "Realizar testes de rosqueamento", ""], ["07", "Avaliar o fechamento", ""], ["07", "Avaliar a vedação", ""], ["07", "Realizar teste de vazamento", ""], ["07", "Avaliar a resistência", ""], ["07", "Avaliar o empilhamento", ""], ["07", "Avaliar o manuseio", ""], ["07", "Solicitar ajustes, quando necessário", "Caixa – Testes e aprovação"], ["08", "Avaliar a legibilidade", ""], ["08", "Conferir as cores", ""], ["08", "Conferir se todas as correções foram executadas", ""], ["09", "Elaborar a ficha técnica (registrar data prevista e data de conclusão)", ""], ["10", "Elaborar a FDS (registrar data prevista e data de conclusão)", ""], ["10", "Revisar e conferir as informações", ""], ["14", "Registrar a data de coleta", ""], ["16", "Confirmar que as condições de produção estão aprovadas", ""], ["16", "Registrar a data de liberação", ""], ["17", "Disponibilizar as informações técnicas", ""], ["07", "Registrar a quantidade recebida", "Frasco – Recebimento da amostra"], ["07", "Solicitar amostras", "Tampa – Recebimento e testes"], ["04", "Definir a quantidade necessária de amostra", "Solicitação de amostras"], ["04", "Solicitar a amostra ao fornecedor", "Solicitação de amostras"]];
 function noAttachItem(c,s){return NO_ATTACH_ITEMS.some(([n,l,g])=>n===s.number&&l===c.label&&(!g||g===(c.group||"")))}
-function wantsAttach(c,s){if(noAttachItem(c,s))return false;return s.number==="01"?!NO_ATTACH_01.test(c.label):ATTACH_RX.test(c.label)}
+function wantsAttach(c,s){if(s.number==="05")return false;if(s.number==="04"){if(/^Registrar o relatório da amostra avaliada/.test(c.label))return true;if(/^Definir os ensaios e os padrões/.test(c.label))return false}if(noAttachItem(c,s))return false;return s.number==="01"?!NO_ATTACH_01.test(c.label):ATTACH_RX.test(c.label)}
 function qAttachHTML(i,j,c,s){if(!wantsAttach(c,s))return "";return`<div class="qattach"><label>📎 Anexar evidência</label><input type="file" id="s_qf_${i}_${j}" multiple>${(c.files||[]).length?fileList(c.files):""}</div>`}
-function qFieldsHTML(i,j,c,s){const v=c.v||{};return`<div class="qfields compact">${fieldSpec(c,s).map(f=>{const id=`s_v_${i}_${j}_${f.k}`,val=esc(v[f.k]||"");let inp=f.t==="date"?`<input type="date" id="${id}" value="${val}">`:f.t==="text"?`<input id="${id}" value="${val}">`:f.t==="sel"?`<select id="${id}"><option value="">— selecione —</option>${f.o.map(o=>`<option ${v[f.k]===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<textarea id="${id}" rows="2" placeholder="Digite a resposta...">${val}</textarea>`;return`<div class="field${f.t==="area"?" wide":""}"><label>${f.l}</label>${inp}</div>`}).join("")}</div>`}
+
+/* ---- lista de ensaios e padrões (Etapa 04) ---- */
+const REQ_TESTS=["Aspecto","Cor","Odor","pH","Densidade","Viscosidade","Ponto de fulgor","Ponto de ebulição","Ponto de fusão","Ponto de congelamento","Teor de ureia","Biureto","Aldeídos","Teor de água","Teor de sólidos","Teor de ativo","Índice de refração","Alcalinidade","Acidez","Insolúveis","Fosfato","Cálcio","Ferro","Cobre","Estabilidade","Compatibilidade"];
+function reqsRows(val){try{const a=JSON.parse(val||"[]");return Array.isArray(a)?a.filter(r=>r&&((r.t||"").trim()||(r.s||"").trim())):[]}catch(e){return val?[{t:"",s:String(val),m:""}]:[]}}
+function reqsText(val){return reqsRows(val).map(r=>(r.t?r.t+": ":"")+(r.s||"—")+(r.m?" (método: "+r.m+")":"")).join("; ")}
+function reqRowHTML(r){r=r||{};return`<tr><td><input class="rq-t" list="reqTestsList" value="${esc(r.t||"")}" placeholder="Ex.: Densidade"></td><td><input class="rq-s" value="${esc(r.s||"")}" placeholder="Ex.: 1,085 a 1,095 g/cm³"></td><td><input class="rq-m" value="${esc(r.m||"")}" placeholder="Opcional"></td><td><button type="button" class="btn small danger" title="Remover ensaio" onclick="reqDel(this)">🗑</button></td></tr>`}
+function reqsHTML(id,val){if(!document.getElementById("reqTestsList")){const dl=document.createElement("datalist");dl.id="reqTestsList";dl.innerHTML=REQ_TESTS.map(x=>`<option value="${esc(x)}">`).join("");document.body.appendChild(dl)}const rows=reqsRows(val);return`<div class="reqs" oninput="reqSync(this)"><table><thead><tr><th>Ensaio</th><th>Padrão / especificação</th><th>Método</th><th></th></tr></thead><tbody>${(rows.length?rows:[{}]).map(reqRowHTML).join("")}</tbody></table><button type="button" class="btn small" onclick="reqAdd(this)">＋ Adicionar ensaio</button><small class="muted">Escolha um ensaio da lista ou digite o nome de qualquer outro.</small><input type="hidden" id="${id}" value="${esc(JSON.stringify(rows))}"></div>`}
+function reqSync(box){const rows=[...box.querySelectorAll("tbody tr")].map(tr=>({t:tr.querySelector(".rq-t").value.trim(),s:tr.querySelector(".rq-s").value.trim(),m:tr.querySelector(".rq-m").value.trim()})).filter(r=>r.t||r.s||r.m);box.querySelector('input[type=hidden]').value=JSON.stringify(rows)}
+function reqAdd(btn){const box=btn.closest(".reqs");box.querySelector("tbody").insertAdjacentHTML("beforeend",reqRowHTML());reqSync(box);box.querySelector("tbody tr:last-child .rq-t").focus()}
+function reqDel(btn){const box=btn.closest(".reqs");btn.closest("tr").remove();if(!box.querySelector("tbody tr"))box.querySelector("tbody").insertAdjacentHTML("beforeend",reqRowHTML());reqSync(box)}
+function qFieldsHTML(i,j,c,s){const v=c.v||{};return`<div class="qfields compact">${fieldSpec(c,s).map(f=>{const id=`s_v_${i}_${j}_${f.k}`,val=esc(v[f.k]||"");let inp=f.t==="reqs"?reqsHTML(id,v[f.k]||""):f.t==="date"?`<input type="date" id="${id}" value="${val}">`:f.t==="text"?`<input id="${id}" value="${val}">`:f.t==="sel"?`<select id="${id}"><option value="">— selecione —</option>${f.o.map(o=>`<option ${v[f.k]===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<textarea id="${id}" rows="2" placeholder="Digite a resposta...">${val}</textarea>`;return`<div class="field${f.t==="area"||f.t==="reqs"?" wide":""}"><label>${f.l}</label>${inp}</div>`}).join("")}</div>`}
 function subGroups(s){const out=[],idx={};(s.checks||[]).forEach((c,j)=>{const key=c.group||"__main";if(!(key in idx)){idx[key]=out.length;const parts=(c.group||"").split(" – ");out.push({key,gi:out.length,parent:parts.length>1?parts[0]:"",title:parts.length>1?parts.slice(1).join(" – "):(c.group||s.name),js:[]})}out[idx[key]].js.push(j)});return out}
 function subLayout(s){const gs=subGroups(s);let k=0,letter=0,lastParent=null;return gs.map(g=>{let label,parentHead="";if(g.parent){if(g.parent!==lastParent){k++;letter=0;lastParent=g.parent;parentHead=`${s.number}.${k} ${g.parent}`}letter++;label=`${s.number}.${k}-${String.fromCharCode(64+letter)}`}else{k++;lastParent=null;label=`${s.number}.${k}`}return{...g,label,parentHead}})}
 function subStagesHTML(s,i){const gs=subGroups(s);let k=0,letter=0,lastParent=null,h="";gs.forEach(g=>{let label;if(g.parent){if(g.parent!==lastParent){k++;letter=0;lastParent=g.parent;h+=`<div class="subparent">${s.number}.${k} ${esc(g.parent)}</div>`}letter++;label=`${s.number}.${k}-${String.fromCharCode(64+letter)}`}else{k++;lastParent=null;label=`${s.number}.${k}`}
@@ -1341,7 +1351,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
      d.setFillColor(...LIGHT);d.rect(M,y,CW,6.5,"F");d.setFillColor(...BLUE);d.rect(M,y,1.4,6.5,"F");txt(g.label+"  "+g.title,M+3,y+4.5,{b:1,s:9.5,c:NAVY});txt(gd+"/"+g.js.length+" verificações",W-M-2,y+4.5,{s:8.5,c:GRAY,a:"right"});y+=9;
      for(const j of g.js){const c=s.checks[j],v=c.v||{};
       para((c.done?"[X] ":"[  ] ")+c.label,{x:M+3,w:CW-6,s:9,b:1,c:c.done?OK:BAD});
-      fieldSpec(c,s).forEach(f=>{let val=v[f.k];if(f.t==="date"&&val)val=D(val);para(f.l+": "+(val||"não preenchido"),{x:M+8,w:CW-12,s:8.5,c:val?undefined:GRAY,i:!val})});
+      fieldSpec(c,s).forEach(f=>{let val=v[f.k];if(f.t==="reqs"){const rs=reqsRows(val);if(!rs.length){para(f.l+": não preenchido",{x:M+8,w:CW-12,s:8.5,c:GRAY,i:1});return}para(f.l+":",{x:M+8,w:CW-12,s:8.5});rs.forEach(r=>para("- "+(r.t?r.t+": ":"")+(r.s||"—")+(r.m?" (método: "+r.m+")":""),{x:M+12,w:CW-16,s:8.5}));return}if(f.t==="date"&&val)val=D(val);para(f.l+": "+(val||"não preenchido"),{x:M+8,w:CW-12,s:8.5,c:val?undefined:GRAY,i:!val})});
       if((c.files||[]).length&&wantsAttach(c,s))await evid(c.files,c.label.slice(0,60));
       y+=1.5}
      y+=2}
