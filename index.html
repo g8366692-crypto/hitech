@@ -1246,10 +1246,10 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   if(naoVis.length){para("Anexos sem possibilidade de pré-visualização no PDF (formato não imagem/PDF/vídeo ou arquivo não processado), mantidos no sistema:",{b:1,s:8.5});naoVis.forEach(f=>para("- "+nm(f)+(f.uploadedAt?" (anexado em "+D(f.uploadedAt)+")":""),{x:M+3,w:CW-6,s:8.5}))}
   if(ja.length)para("Já apresentados acima: "+ja.map(nm).join("; "),{i:1,c:GRAY,s:8})};
  /* ---- Capa ---- */
- d.setFillColor(...NAVY);d.rect(0,0,W,6,"F");d.addImage(LOGO,"PNG",M,28,86,24.8);if(CRON)txt("R-8.03.01",W-M,20,{b:1,s:13,c:NAVY,a:"right"});
+ d.setFillColor(...NAVY);d.rect(0,0,W,6,"F");d.addImage(LOGO,"PNG",M,28,86,24.8);if(CRON||AMB)txt(AMB?"R-8.03.02":"R-8.03.01",W-M,20,{b:1,s:13,c:NAVY,a:"right"});
  if(AMB){txt("RELATÓRIO DA ANÁLISE AMBIENTAL",M,88,{b:1,s:21,c:NAVY});txt("Análise ambiental conforme a ISO 14001, registro por registro, com as evidências",M,98,{s:12,c:BLUE})}else if(only){txt("RELATÓRIO DO CRONOGRAMA",M,88,{b:1,s:21,c:NAVY});txt("Cronograma de desenvolvimento, etapa por etapa, com as evidências",M,98,{s:12,c:BLUE})}else{txt("RELATÓRIO DE DESENVOLVIMENTO DO PROJETO",M,88,{b:1,s:21,c:NAVY});txt("Documentação do processo para auditoria",M,98,{s:13,c:BLUE})}
  d.setDrawColor(...BLUE);d.setLineWidth(1.2);d.line(M,104,M+60,104);
- let ci=[CRON?["Relatório / Procedimento","R-8.03.01 / PG-8.03"]:["Procedimento","PG-8.03 (Rev. 09)"]];
+ let ci=[CRON?["Relatório / Procedimento","R-8.03.01 / PG-8.03"]:AMB?["Relatório / Procedimento","R-8.03.02 / PG-8.03"]:["Procedimento","PG-8.03 (Rev. 09)"]];
  if(multi)ci.push(["Projetos incluídos",String(list.length)]);else{const p=list[0];ci.push(["Projeto",p.name],["Identificação",(p.projectRef||p.id)+(p.code?" / "+p.code:"")],["Tipo de desenvolvimento",p.type+" - "+(TYPE_FULL[p.type]||"")],["Responsável",p.owner||"-"],["Status / progresso",p.status+" / "+progress(p)+"%"])}
  ci.push(["Data de geração",gen],["Gerado por",currentUser?.email||"-"]);
  ci.forEach((r,i)=>{txt(r[0]+":",M,120+i*9,{b:1,s:10.5,c:NAVY});txt(d.splitTextToSize(T(r[1]),CW-62)[0],M+62,120+i*9,{s:10.5})});
@@ -1282,7 +1282,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   const adt=r=>fv(r,/^data/i)||r.date||"";
   const env=[...(p.environment||[])].sort((a,b)=>String(adt(a)).localeCompare(String(adt(b))));
   S(1,"Análise ambiental conforme a ISO 14001");
-  para("Conforme a ABNT NBR ISO 14001 (item 6.1.2 - Aspectos ambientais) e o item 6.7 do PG-8.03, a análise ambiental identifica os aspectos ambientais das matérias-primas e dos insumos do projeto, avalia os impactos associados e prioriza as alternativas de menor impacto, considerando a perspectiva de ciclo de vida. Cada registro é detalhado a seguir com o aspecto avaliado (matéria-prima/insumo), o impacto identificado, as alternativas avaliadas, a melhoria ou justificativa (controle definido), o responsável, a data, a conclusão e todas as evidências anexadas (imagens, páginas de PDF e quadros de vídeo).",{s:9.5});
+  para("Conforme a ABNT NBR ISO 14001 (item 6.1.2 - Aspectos ambientais) e os itens 6.7.1 e 6.7.2 do PG-8.03, a análise ambiental identifica os aspectos ambientais das matérias-primas e dos insumos do projeto, avalia os impactos associados e prioriza as alternativas de menor impacto, considerando a perspectiva de ciclo de vida. Cada registro é detalhado a seguir com o aspecto avaliado (matéria-prima/insumo), o impacto identificado, as alternativas avaliadas, a melhoria ou justificativa (controle definido), o responsável, a data, a conclusão e todas as evidências anexadas (imagens, páginas de PDF e quadros de vídeo).",{s:9.5});
   sub(P+"1.1 Quadro geral dos registros");
   if(!env.length)para("Nenhum registro de análise ambiental cadastrado no sistema até a data de geração.",{i:1,c:GRAY});
   else table(["Nº","Matéria-prima / insumo","Impacto identificado","Responsável","Data","Anexos"],env.map((r,i)=>[i+1,fv(r,/mat[ée]ria|insumo/i)||r.title||"-",fv(r,/impacto/i)||"-",fv(r,/respons/i)||r.owner||"-",D(adt(r)),(r.files||[]).length]),[9,44,CW-127,30,22,22]);
@@ -1291,7 +1291,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   for(let i=0;i<env.length;i++){const r=env[i],F=r.fields||[],tt=r.title||(r.values||[])[0]||"Registro "+(i+1),cc=fv(r,/conclus/i);
    np();toc.push({t:"Registro "+(i+1)+" - "+tt,l:2,p:pg()});
    d.setFillColor(...LIGHT);d.rect(M,y,CW,8,"F");d.setFillColor(...(cc?OK:BLUE));d.rect(M,y,1.8,8,"F");txt(d.splitTextToSize(T("Registro "+(i+1)+" - "+tt),CW-50)[0],M+4,y+5.4,{b:1,s:10,c:NAVY});txt(cc?"Conclusão registrada":"Sem conclusão",W-M-2,y+5.4,{b:1,s:9,c:cc?OK:BLUE,a:"right"});y+=10;
-   para("Referência: ABNT NBR ISO 14001, item 6.1.2 (aspectos ambientais)   |   PG-8.03, item 6.7",{s:8.5,c:GRAY,i:1});
+   para("Referência: ABNT NBR ISO 14001, item 6.1.2 (aspectos ambientais)   |   PG-8.03, itens 6.7.1 e 6.7.2 (R-8.03.02)",{s:8.5,c:GRAY,i:1});
    table(["Responsável","Data da avaliação","Registro cadastrado em","Anexos"],[[fv(r,/respons/i)||r.owner||"-",D(adt(r)),D(r.date),(r.files||[]).length]],[60,38,38,CW-136]);
    const ev=F.map((f,j)=>/^data/i.test(f)&&r.values[j]?[r.values[j],f]:null).filter(Boolean).sort((a,b)=>a[0].localeCompare(b[0]));
    if(ev.length>1){h3("Cronologia dos fatos registrados");table(["Data","Fato registrado"],ev.map(e=>[D(e[0]),e[1]]),[30,CW-30])}
@@ -1364,7 +1364,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   await recs(p.suppliers,4,"desenvolvimento de fornecedor",2);
   /* ===== 5 AMBIENTAL ===== */
   S(5,"Análise ambiental conforme a ISO 14001");
-  para("Conforme o item 6.7 do PG-8.03, a análise ambiental avalia as matérias-primas e os insumos e prioriza os de menor impacto. Cada registro abaixo apresenta o aspecto avaliado (matéria-prima/insumo), o impacto identificado, as alternativas avaliadas, a melhoria ou justificativa (controle definido), o responsável, a data e a conclusão.",{s:9.5});
+  para("Conforme os itens 6.7.1 e 6.7.2 do PG-8.03, a análise ambiental avalia as matérias-primas e os insumos e prioriza os de menor impacto. Cada registro abaixo apresenta o aspecto avaliado (matéria-prima/insumo), o impacto identificado, as alternativas avaliadas, a melhoria ou justificativa (controle definido), o responsável, a data e a conclusão.",{s:9.5});
   await recs(p.environment,5,"análise ambiental",1);
   /* ===== 6 ENCERRAMENTO ===== */
   S(6,"Encerramento e rastreabilidade");
@@ -1413,7 +1413,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
  }
  /* ---- sumário ---- */
  d.setPage(2);const sp=Math.min(7,225/Math.max(toc.length,1)),fs=toc.length>32?8.5:10;let ty=44;toc.forEach(e=>{const x=M+(e.l-1)*(multi?7:0);txt(e.t,x,ty,{b:e.l===1,s:e.l===1?fs:fs-.5,c:e.l===1?NAVY:[50,55,70]});txt(String(e.p),W-M,ty,{s:fs,a:"right",c:NAVY});d.setDrawColor(215,220,230);d.setLineWidth(.2);d.line(x+d.getTextWidth(T(e.t))+2,ty,W-M-8,ty);ty+=sp});
- const N=pg();for(let i=2;i<=N;i++){d.setPage(i);d.addImage(LOGO,"PNG",M,6,24,6.9);txt((AMB?"Relatório da Análise Ambiental - ISO 14001":only?"Relatório do Cronograma":"Relatório de Desenvolvimento do Projeto")+(CRON?" | R-8.03.01 | PG-8.03":" | PG-8.03 Rev. 09"),W-M,10,{s:8,c:GRAY,a:"right"});d.setDrawColor(...BLUE);d.setLineWidth(.5);d.line(M,15,W-M,15);d.setDrawColor(200,205,215);d.setLineWidth(.2);d.line(M,H-13,W-M,H-13);txt("Hi Tech Automotive - Gerado em "+gen,M,H-8,{s:8,c:GRAY});txt("Página "+i+" de "+N,W-M,H-8,{s:8,c:GRAY,a:"right"})}
+ const N=pg();for(let i=2;i<=N;i++){d.setPage(i);d.addImage(LOGO,"PNG",M,6,24,6.9);txt((AMB?"Relatório da Análise Ambiental - ISO 14001":only?"Relatório do Cronograma":"Relatório de Desenvolvimento do Projeto")+(CRON?" | R-8.03.01 | PG-8.03":AMB?" | R-8.03.02 | PG-8.03":" | PG-8.03 Rev. 09"),W-M,10,{s:8,c:GRAY,a:"right"});d.setDrawColor(...BLUE);d.setLineWidth(.5);d.line(M,15,W-M,15);d.setDrawColor(200,205,215);d.setLineWidth(.2);d.line(M,H-13,W-M,H-13);txt("Hi Tech Automotive - Gerado em "+gen,M,H-8,{s:8,c:GRAY});txt("Página "+i+" de "+N,W-M,H-8,{s:8,c:GRAY,a:"right"})}
  const nme=multi?"Todos":String(list[0].code||list[0].name).replace(/[^a-zA-Z0-9_-]+/g,"_").slice(0,40);
  d.save((AMB?"Relatorio_Analise_Ambiental_ISO14001_":only?"Relatorio_Cronograma_":"Relatorio_Auditoria_")+nme+"_"+dateNow()+".pdf");
  try{localStorage.setItem("hitech_last_report",now.toISOString())}catch(e){}
