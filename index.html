@@ -417,6 +417,14 @@ b,strong{font-weight:600}
 html[data-theme=dark] .rval{background:#121b2c;border-color:#24324a;color:#e6edf6}
 html[data-theme=dark] .rval.empty{color:#6b7c95}
 html[data-theme=dark] .rviewmeta{color:#8a9ab2}
+
+/* ---- vídeo dos produtos no menu lateral ---- */
+.sbvideo{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;margin:-8px 0}
+.sbvideo video{height:100%;max-height:420px;max-width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:14px;border:1px solid #ffffff1f;box-shadow:0 14px 34px #0008;background:#000;opacity:0;transition:opacity .6s ease}
+.sbvideo.on video{opacity:1}
+.sbvideo.off video{display:none}
+.app.sbcompact .sbvideo{visibility:hidden}
+@media(max-width:900px){.sbvideo{display:none}}
 </style>
 <script>try{if(localStorage.getItem("hitech_theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
 </head>
@@ -465,6 +473,7 @@ if(!window.HITECH_SUPABASE_CONFIG||!window.HITECH_SUPABASE_CONFIG.url){window.HI
     <button data-page="projects"><span class="ico">▤</span><span class="navtext">Projetos</span></button>
     <button data-page="timeline"><span class="ico">◷</span><span class="navtext">Histórico geral</span></button>
   </div>
+  <div class="sbvideo" aria-hidden="true"><video muted loop playsinline preload="none" poster="poster.jpg"></video></div>
   <div class="sidebar-foot">HiTech - ISO 9001 (8.3) - ISO 14001 (6.1.2/8.1)<br>Ambiente compartilhado · Supabase</div>
 </aside>
 <main class="main">
@@ -1439,4 +1448,15 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden){v.pause();
 new MutationObserver(run).observe(S,{attributes:true,attributeFilter:["class"]});
 addEventListener("resize",()=>{clearTimeout(run.t);run.t=setTimeout(run,300)});
 run()})();
+</script>
+
+<script>
+/* vídeo dos produtos no espaço livre do menu lateral */
+(function(){const box=document.querySelector(".sbvideo");if(!box)return;const v=box.querySelector("video"),S=document.getElementById("authScreen"),A=document.querySelector(".app")||document.body;
+const run=()=>{const small=box.clientHeight<190||box.clientWidth<120;box.classList.toggle("off",small);
+ const vis=!small&&!A.classList.contains("sbcompact")&&!document.hidden&&!(S&&S.classList.contains("show"))&&getComputedStyle(box).display!=="none"&&!matchMedia("(prefers-reduced-motion: reduce)").matches;
+ if(vis){if(!v.getAttribute("src"))v.src="produtos.mp4";v.play().then(()=>box.classList.add("on")).catch(()=>{})}else{v.pause()}};
+addEventListener("resize",()=>{clearTimeout(run.t);run.t=setTimeout(run,250)});document.addEventListener("visibilitychange",run);
+const mo=new MutationObserver(run);if(S)mo.observe(S,{attributes:true,attributeFilter:["class"]});mo.observe(A,{attributes:true,attributeFilter:["class"]});
+setTimeout(run,600)})();
 </script>
