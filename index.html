@@ -1456,7 +1456,7 @@ run()})();
 const run=()=>{const small=box.clientHeight<190||box.clientWidth<120;box.classList.toggle("off",small);
  const vis=!small&&!A.classList.contains("sbcompact")&&!document.hidden&&!(S&&S.classList.contains("show"))&&getComputedStyle(box).display!=="none"&&!matchMedia("(prefers-reduced-motion: reduce)").matches;
  if(vis){if(!v.getAttribute("src"))v.src="produtos.mp4";v.play().then(()=>box.classList.add("on")).catch(()=>{})}else{v.pause()}};
-addEventListener("resize",()=>{clearTimeout(run.t);run.t=setTimeout(run,250)});document.addEventListener("visibilitychange",run);
-const mo=new MutationObserver(run);if(S)mo.observe(S,{attributes:true,attributeFilter:["class"]});mo.observe(A,{attributes:true,attributeFilter:["class"]});
+addEventListener("resize",()=>{clearTimeout(run.t);run.t=setTimeout(run,250)});document.addEventListener("visibilitychange",run);if(window.ResizeObserver)new ResizeObserver(()=>{clearTimeout(run.r);run.r=setTimeout(run,120)}).observe(box);const sb=document.querySelector(".sidebar");if(sb)sb.addEventListener("transitionend",e=>{if(e.target===sb)run()});
+const mo=new MutationObserver(()=>{run();clearTimeout(run.m);run.m=setTimeout(run,450)});if(S)mo.observe(S,{attributes:true,attributeFilter:["class"]});mo.observe(A,{attributes:true,attributeFilter:["class"]});
 setTimeout(run,600)})();
 </script>
