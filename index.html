@@ -995,7 +995,7 @@ async function createProject(){let val=id=>document.getElementById(id).value.tri
 let id=newId();let projectRef="PRJ-"+Date.now();let p={id,projectRef,name:val("f_name"),code:val("f_code"),type:val("f_type"),origin:val("f_origin"),needDate:val("f_needDate"),receivedDate:val("f_receivedDate"),requester:val("f_requester"),department:val("f_department"),owner:val("f_owner"),due:val("f_due"),dueOriginal:val("f_due"),dueHistory:[],reason:val("f_reason"),status:"Em andamento",created:dateNow(),updated:new Date().toISOString(),stages:STAGES.map(s=>({number:s[0],name:s[1],status:"Não iniciada",checks:buildChecks(s[3]),notes:"",start:"",end:"",plannedStart:"",plannedEnd:"",delayCause:"",delayNote:"",replans:[],responsible:"",files:[]})),generalFiles:[],events:[]};
 p.generalFiles=await filesFrom(document.getElementById("f_files"),"Abertura do projeto",id);p.events.push({date:new Date().toISOString(),title:"Projeto cadastrado",detail:`Necessidade originada em ${fmt(p.needDate)}; solicitação recebida em ${fmt(p.receivedDate)}. Solicitante: ${p.requester}.`});await save(p);closeModal();openProject(id)}
 function openProject(id){currentId=id;currentTab="overview";renderProject()}
-function renderProject(){window.__inProject=true;let p=getP();if(!p){window.__inProject=false;return showPage("projects")}document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["stages","Cronograma – "+STAGES.length+" etapas"],["suppliers","Fornecedores"],["environment","Análise ambiental conforme a ISO 14001"],["approvals","Aprovações"],["evidence","Evidências"],["history","Histórico"]];
+function renderProject(){if(window.__inSheet&&window.sheetLeave)window.sheetLeave();window.__inProject=true;let p=getP();if(!p){window.__inProject=false;return showPage("projects")}document.getElementById("crumb").textContent=p.code||p.name;let tabs=[["overview","Resumo"],["stages","Cronograma – "+STAGES.length+" etapas"],["environment","Análise ambiental conforme a ISO 14001"],["sheets","Planilhas"],["evidence","Evidências"],["history","Histórico"]];
 document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Projeto ${esc(p.projectRef||p.id)}</div><h1>${esc(p.name)}</h1><p class="sub">${esc(p.code||"Sem código")} · Tipo ${esc(p.type)} · Criado em ${fmt(p.created)}</p></div><div class="toolbar"><button class="btn" onclick="showPage('projects')">← Projetos</button><button class="btn primary" onclick="editProject()">Editar dados</button><button class="btn danger" onclick="deleteProject('${p.id}')">🗑 Excluir projeto</button></div></div>
 <div class="projectlayout"><div class="panel projectnav">${tabs.map((t,i)=>`${i===0||i===1||i===2||i===4?`<div class="group">${i===0?"Projeto":i===1?"Cronograma":i===2?"Controles complementares":"Encerramento e rastreabilidade"}</div>`:""}<button class="${currentTab===t[0]?"active":""}${t[0]==="stages"?" keytab":""}" onclick="setTab('${t[0]}')">${t[1]}</button>`).join("")}</div><div id="projectContent"></div></div>`;
 renderProjectTab()}
@@ -1008,6 +1008,7 @@ if(currentTab==="stages")el.innerHTML=stagesHTML(p);
 if(currentTab==="suppliers")el.innerHTML=simpleRecordHTML(p,"suppliers","Desenvolvimento de fornecedores",["Fornecedor","Insumo","Data de início","Data de solicitação da amostra","Data de recebimento da amostra","Responsável","Resultado / conclusão"],"Registre o desenvolvimento do fornecedor, a documentação, as amostras, a homologação e o lote piloto. Considere o estoque mínimo equivalente a 30 dias de consumo previsto no PG-8.03.");
 if(currentTab==="environment")el.innerHTML=simpleRecordHTML(p,"environment","Análise ambiental conforme a ISO 14001",["Matéria-prima / insumo","Impacto identificado","Alternativas avaliadas","Melhoria / justificativa","Responsável","Data da avaliação","Conclusão"],"Registrar a avaliação ambiental conforme a ISO 14001 (aspectos e impactos ambientais) e a priorização de matérias-primas e insumos de menor impacto.",`<button class="btn small" id="btnReportAmb" onclick="gerarRelatorioGeral({only:'ambiental',projectId:currentId,btnId:'btnReportAmb'})" title="Gera o PDF só com a análise ambiental e as evidências, usando o que já está salvo">⇩ Gerar relatório da análise ambiental</button>`);
 if(currentTab==="approvals")el.innerHTML=approvalsHTML(p);
+if(currentTab==="sheets")el.innerHTML=typeof projectSheetsHTML==="function"?projectSheetsHTML(p):"";
 if(currentTab==="evidence")el.innerHTML=evidenceHTML(p);
 if(currentTab==="history")el.innerHTML=historyHTML(p);
 }
@@ -1115,7 +1116,7 @@ function renderBackup(){document.getElementById("crumb").textContent="Backup";le
 document.getElementById("view").innerHTML=`<div class="pagehead"><div><div class="eyebrow">Segurança dos dados</div><h1>Backup e restauração</h1><p class="sub">Projetos e anexos ficam sincronizados na nuvem. O backup gera um arquivo completo para guardar em local seguro.</p></div></div>${backupNotice()}
 <div class="grid"><div class="panel"><div class="panelhead"><h2>Exportar backup</h2></div><div class="panelbody"><p>Gera um arquivo <b>.json</b> com todos os projetos, etapas, prazos, aprovações, histórico e anexos. Os anexos são incluídos no arquivo.</p><p class="muted">${projects.length} projeto(s) · cerca de ${(sz/1048576).toFixed(1)} MB · último backup: ${l?new Date(l).toLocaleString("pt-BR"):"nunca"}</p><button class="btn primary" onclick="exportBackup()">⇩ Baixar backup</button></div></div>
 <div class="panel"><div class="panelhead"><h2>Importar backup</h2></div><div class="panelbody"><p>Restaura projetos e anexos de um arquivo de backup. Nada é apagado: projetos novos entram, e os existentes só são atualizados se o backup for mais recente.</p><input type="file" accept=".json,application/json" onchange="importBackup(this)"></div></div></div>
-<div class="panel" style="margin-bottom:14px"><div class="panelhead"><h2>Relatório de auditoria do projeto (PDF)</h2></div><div class="panelbody"><p>Gera a <b>documentação cronológica do projeto</b> em PDF, na ordem: 1) Abertura do projeto, 2) Cronograma de desenvolvimento, 3) Controles complementares, 4) Fornecedores, 5) Análise ambiental conforme a ISO 14001, 6) Encerramento e rastreabilidade, 7) Aprovações. Todos os anexos são incorporados nas etapas correspondentes (imagens, páginas de PDF e quadro dos vídeos).</p><div class="field" style="margin:10px 0"><label>Projeto</label><select id="reportProject">${projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}<option value="">Todos os projetos (um único PDF)</option></select></div><p class="muted">Último relatório: ${(()=>{try{let r=localStorage.getItem("hitech_last_report");return r?new Date(r).toLocaleString("pt-BR"):"nunca"}catch(e){return"nunca"}})()} · com muitos anexos a geração pode levar alguns minutos.</p><button class="btn primary" id="btnReport" onclick="gerarRelatorioGeral()">⇩ Gerar relatório PDF</button></div></div><div class="notice blue"><b>Boas práticas:</b> faça backup ao fim de cada semana e salve o arquivo em pasta de rede ou nuvem da empresa, não só neste computador. O arquivo contém todos os anexos, então trate-o como documento confidencial. A sincronização entre usuários ocorre pelo Supabase. O backup é uma cópia adicional de segurança.</div>`}
+<div class="panel" style="margin-bottom:14px"><div class="panelhead"><h2>Relatório de auditoria do projeto (PDF)</h2></div><div class="panelbody"><p>Gera a <b>documentação cronológica do projeto</b> em PDF, na ordem: 1) Abertura do projeto, 2) Cronograma de desenvolvimento, 3) Controles complementares, 4) Análise ambiental conforme a ISO 14001, 5) Planilhas do projeto, 6) Encerramento e rastreabilidade, 7) Aprovação final. Todos os anexos são incorporados nas etapas correspondentes (imagens, páginas de PDF e quadro dos vídeos).</p><div class="field" style="margin:10px 0"><label>Projeto</label><select id="reportProject">${projects.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}<option value="">Todos os projetos (um único PDF)</option></select></div><p class="muted">Último relatório: ${(()=>{try{let r=localStorage.getItem("hitech_last_report");return r?new Date(r).toLocaleString("pt-BR"):"nunca"}catch(e){return"nunca"}})()} · com muitos anexos a geração pode levar alguns minutos.</p><button class="btn primary" id="btnReport" onclick="gerarRelatorioGeral()">⇩ Gerar relatório PDF</button></div></div><div class="notice blue"><b>Boas práticas:</b> faça backup ao fim de cada semana e salve o arquivo em pasta de rede ou nuvem da empresa, não só neste computador. O arquivo contém todos os anexos, então trate-o como documento confidencial. A sincronização entre usuários ocorre pelo Supabase. O backup é uma cópia adicional de segurança.</div>`}
 function toggleStage(i){document.getElementById("stagebody_"+i).classList.toggle("hidden")}
 /* ===== Alerta de atraso por e-mail (destino definido na Edge Function: gabriel@hitech.ind.br) ===== */
 function lateOpenStages(p,only){return (p.stages||[]).map((s,i)=>({s,i})).filter(x=>(only==null||x.i===only)&&stageDelay(x.s)&&!(x.s.delayAlertFor===(x.s.plannedEnd+"|"+(x.s.end||""))&&x.s.delayAlertDay===dateNow()))}
@@ -1284,7 +1285,7 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   const files=allFiles(AMB?(p.environment||[]):(only?p.stages:p));tAtt=files.length;nAtt=0;shown.clear();cache.clear();
   const origin=new Map(),reg=(a,l)=>(a||[]).forEach(f=>{if(!origin.has(fk(f)))origin.set(fk(f),l)});
   reg(p.generalFiles,"1.1 Entradas do projeto");
-  p.stages.forEach(s=>{reg(s.files,"2 Etapa "+s.number);Object.keys(s.subFiles||{}).forEach(k=>reg(s.subFiles[k],"2 Etapa "+s.number+" - "+k));(s.checks||[]).forEach(c=>reg(c.files,"2 Etapa "+s.number+" - "+c.label))});(p.suppliers||[]).forEach(r=>reg(r.files,"4 Fornecedores"));(p.environment||[]).forEach(r=>reg(r.files,AMB?"1 Análise ambiental":"5 Análise ambiental"));(p.approvals||[]).forEach(a=>reg(a.files,"7 Aprovações"));
+  p.stages.forEach(s=>{reg(s.files,"2 Etapa "+s.number);Object.keys(s.subFiles||{}).forEach(k=>reg(s.subFiles[k],"2 Etapa "+s.number+" - "+k));(s.checks||[]).forEach(c=>reg(c.files,"2 Etapa "+s.number+" - "+c.label))});(p.environment||[]).forEach(r=>reg(r.files,AMB?"1 Análise ambiental":"4 Análise ambiental"));(p.approvals||[]).forEach(a=>reg(a.files,"7 Aprovação final"));
   const S=(n,t)=>multi?h2(k+"."+n+" "+t):h1(n+". "+t),P=multi?k+".":"",CN=only?1:2;
   if(multi)h1("Projeto "+k+" - "+p.name);
   const chk=p.stages.reduce((a,s)=>a+s.checks.filter(c=>c.done).length,0),chkT=p.stages.reduce((a,s)=>a+s.checks.length,0);
@@ -1368,26 +1369,34 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
    for(const k of Object.keys(s.subFiles||{}))await evid(s.subFiles[k],"etapa "+s.number+" - "+k);if(!only)for(const c of s.checks||[])if((c.files||[]).length)await evid(c.files,"etapa "+s.number+" - "+c.label);await evid(s.files,"etapa "+s.number+" (gerais)");y+=4}
   if(!only){
   /* ===== 3 CONTROLES COMPLEMENTARES ===== */
+  const shs=typeof sheetsOfProject==="function"?sheetsOfProject(p.id):[];
   S(3,"Controles complementares");
-  para("Além do cronograma, o projeto possui controles complementares que registram aspectos específicos do desenvolvimento. Cada controle é detalhado, com seus registros e evidências, nas seções 4 e 5.",{s:9.5});
-  table(["Controle","Finalidade (PG-8.03)","Registros no projeto","Detalhado em"],[["Desenvolvimento de fornecedores","Item 6.6: acionar o Desenvolvimento previamente, controlar amostras, homologação e estoque mínimo de 30 dias de consumo.",(p.suppliers||[]).length+" registro(s)","Seção "+P+"4"],["Análise ambiental","Item 6.7: considerar questões ambientais e priorizar matérias-primas e insumos de menor impacto.",(p.environment||[]).length+" registro(s)","Seção "+P+"5"]],[40,CW-92,28,24]);
-  [["Fornecedores",p.suppliers],["Análise ambiental",p.environment]].forEach(([t,a])=>{h3("Registros de "+t);if(!(a||[]).length)para("Nenhum registro cadastrado.",{i:1,c:GRAY,s:9});else table(["Registro","Responsável","Data","Anexos"],a.map(r=>[r.title||(r.values||[])[0]||"-",r.owner,D(r.date),(r.files||[]).length]),[80,40,24,CW-144])});
-  /* ===== 4 FORNECEDORES ===== */
-  S(4,"Fornecedores");
-  para("Os registros abaixo documentam o desenvolvimento de fornecedores na ordem cronológica dos acontecimentos, conforme lançado no sistema (identificação do fornecedor e do insumo, datas de início, solicitação e recebimento de amostras, responsável e resultado). Informações como cotações, negociações e comunicações são apresentadas somente quando constam nos registros, nas observações ou nos anexos.",{s:9.5});
-  const s05=p.stages.find(s=>s.number==="05");
-  if(s05){sub(P+"4.1 Etapa do cronograma relacionada: "+s05.number+" - "+s05.name);table(["Status","Responsável","Prazo previsto","Conclusão"],[[s05.status,s05.responsible||"-",D(s05.plannedEnd),D(s05.end)]],[40,60,38,CW-138]);para(s05.notes||"Sem observações registradas nesta etapa.",{s:9.5,c:s05.notes?undefined:GRAY,i:!s05.notes});para("Evidências desta etapa: apresentadas na seção "+P+"2, etapa 05.",{i:1,c:GRAY,s:8.5})}
+  para("Além do cronograma, o projeto possui controles complementares que registram aspectos específicos do desenvolvimento. Cada controle é detalhado nas seções 4 e 5.",{s:9.5});
+  table(["Controle","Finalidade (PG-8.03)","Registros no projeto","Detalhado em"],[["Análise ambiental","Item 6.7: considerar questões ambientais e priorizar matérias-primas e insumos de menor impacto.",(p.environment||[]).length+" registro(s)","Seção "+P+"4"],["Planilhas do projeto","Tabelas e cálculos de apoio montados no sistema (custos, materiais, comparativos etc.).",shs.length+" planilha(s)","Seção "+P+"5"]],[40,CW-92,28,24]);
   const dts=r=>(r.fields||[]).map((f,i)=>/^data/i.test(f)&&r.values[i]?r.values[i]:null).filter(Boolean).sort()[0]||r.date||"";
   const recs=async(arr,pre,tl,off)=>{const L=[...(arr||[])].sort((a,b)=>String(dts(a)).localeCompare(String(dts(b))));if(!L.length){para("Nenhum registro de "+tl+" cadastrado no sistema.",{i:1,c:GRAY});return}
    for(let i=0;i<L.length;i++){const r=L[i],F=r.fields||[];sub(P+pre+"."+(i+off)+" "+(r.title||(r.values||[])[0]||"Registro "+(i+1)));
     const ev=F.map((f,j)=>/^data/i.test(f)&&r.values[j]?[r.values[j],f]:null).filter(Boolean).sort((a,b)=>a[0].localeCompare(b[0]));
     if(ev.length){h3("Cronologia dos fatos registrados");table(["Data","Fato registrado"],ev.map(e=>[D(e[0]),e[1]]),[30,CW-30])}
     h3("Informações registradas");table(["Campo","Registro"],F.map((f,j)=>[f,r.values[j]]).filter((x,j)=>!/^data/i.test(F[j])).concat(r.notes?[["Descrição / observações",r.notes]]:[]).concat([["Registro cadastrado em",D(r.date)]]),[60,CW-60]);await evid(r.files,r.title||"registro")}};
-  await recs(p.suppliers,4,"desenvolvimento de fornecedor",2);
-  /* ===== 5 AMBIENTAL ===== */
-  S(5,"Análise ambiental conforme a ISO 14001");
+  /* ===== 4 AMBIENTAL ===== */
+  S(4,"Análise ambiental conforme a ISO 14001");
   para("Conforme os itens 6.7.1 e 6.7.2 do PG-8.03, a análise ambiental avalia as matérias-primas e os insumos e prioriza os de menor impacto. Cada registro abaixo apresenta o aspecto avaliado (matéria-prima/insumo), o impacto identificado, as alternativas avaliadas, a melhoria ou justificativa (controle definido), o responsável, a data e a conclusão.",{s:9.5});
-  await recs(p.environment,5,"análise ambiental",1);
+  await recs(p.environment,4,"análise ambiental",1);
+  /* ===== 5 PLANILHAS ===== */
+  S(5,"Planilhas do projeto");
+  if(!shs.length)para("Nenhuma planilha cadastrada neste projeto.",{i:1,c:GRAY});
+  for(let i=0;i<shs.length;i++){const sh=shs[i],gr=sheetGrid(sh),nr=gr.length,nc=nr?gr[0].length:0;
+   sub(P+"5."+(i+1)+" "+(sh.name||"Planilha"));
+   para("Tamanho: "+nr+" linha(s) com conteúdo x "+nc+" coluna(s). Última atualização: "+(sh.updated?D(sh.updated):"-")+(sh.updatedBy?" por "+sh.updatedBy:"")+". Valores calculados na data de geração.",{s:8.5,c:GRAY,i:1});
+   if(!nr){para("Planilha vazia.",{i:1,c:GRAY,s:9});continue}
+   const MR=150,rows=gr.slice(0,MR),BL=7,hdr=!!sh.header;
+   for(let c0=0;c0<nc;c0+=BL){const c1=Math.min(nc,c0+BL),cols=c1-c0,w=Array(cols+1).fill((CW-10)/cols);w[0]=10;
+    if(nc>BL)h3("Colunas "+sheetColName(c0)+" a "+sheetColName(c1-1));
+    const head=["#"].concat(hdr?rows[0].slice(c0,c1):Array.from({length:cols},(_,k)=>sheetColName(c0+k)));
+    const body=(hdr?rows.slice(1):rows).map((r,k)=>[String(k+(hdr?2:1))].concat(r.slice(c0,c1)));
+    table(head,body,w)}
+   if(gr.length>MR)para("Mostradas as "+MR+" primeiras linhas de "+gr.length+"; a planilha completa está no sistema.",{i:1,c:GRAY,s:8.5})}
   /* ===== 6 ENCERRAMENTO ===== */
   S(6,"Encerramento e rastreabilidade");
   sub(P+"6.1 Atividades concluídas");
@@ -1399,9 +1408,8 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
    ["Enquadramento do tipo de desenvolvimento","6.1",sit(!!p.type),"Tipo "+p.type],
    ["Cronograma de desenvolvimento","6.3 / 6.4.4",sit(cd.length===p.stages.length,cd.length>0),cd.length+" de "+p.stages.length+" etapas concluídas; "+chk+" de "+chkT+" verificações"],
    ["Lote piloto (produção e validação)","6.5.3",sit(stt("13")==="Concluída"&&stt("14")==="Concluída",stt("13")!=="Não iniciada"),"Etapa 13: "+stt("13")+" / Etapa 14: "+stt("14")],
-   ["Desenvolvimento de fornecedores","6.6",sit((p.suppliers||[]).length>0),(p.suppliers||[]).length+" registro(s)"],
    ["Análise ambiental","6.7",sit((p.environment||[]).length>0),(p.environment||[]).length+" registro(s)"],
-   ["Aprovação final pela diretoria (Etapa 15)","6.5.1",sit(apF.some(a=>a.decision==="Aprovado"),apF.length>0),apF.length?apF.map(a=>a.decision).join(", "):"Sem registro"],
+   ["Aprovação final pela diretoria (Etapa 15)","6.5.1",sit(stt("15")==="Concluída",stt("15")!=="Não iniciada"&&stt("15")!=="-"),"Etapa 15: "+stt("15")],
    ["Evidências anexadas","-",sit(files.length>0),files.length+" arquivo(s)"]],[58,22,26,CW-106]);
   sub(P+"6.3 Registros gerados e rastreabilidade dos anexos");
   const left=files.filter(f=>!origin.has(fk(f)));left.forEach(f=>origin.set(fk(f),"6.4 Anexos adicionais"));
@@ -1413,22 +1421,20 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
   if(left.length)await evid(left,"anexos adicionais");else para("Todos os anexos do projeto foram apresentados nas seções correspondentes.",{s:9.5});
   sub(P+"6.5 Pendências");
   const pend=[];p.stages.filter(s=>s.status!=="Concluída").forEach(s=>pend.push(["Etapa "+s.number+" - "+s.name,"Status: "+s.status+"; "+s.checks.filter(c=>!c.done).length+" verificação(ões) pendente(s)"]));p.stages.filter(s=>s.status==="Concluída"&&s.checks.some(c=>!c.done)).forEach(s=>pend.push(["Etapa "+s.number+" - "+s.name,"Concluída com verificação(ões) não marcada(s): "+s.checks.filter(c=>!c.done).map(c=>c.label).join("; ")]));
-  if(!apF.some(a=>a.decision==="Aprovado"))pend.push(["Aprovação de conclusão do projeto","Não há aprovação com decisão Aprovado registrada"]);
   if(pend.length)table(["Item","Situação"],pend,[70,CW-70]);else para("Não há pendências identificadas nos registros do sistema.",{b:1,s:9.5,c:OK});
   sub(P+"6.6 Resultados finais");
-  table(["Indicador","Resultado"],[["Status do projeto",p.status],["Etapas concluídas",cd.length+" de "+p.stages.length+" ("+progress(p)+"%)"],["Verificações atendidas",chk+" de "+chkT],["Primeira / última conclusão de etapa",conc.length?D(conc[0].end)+" / "+D(conc[conc.length-1].end):"-"],["Aprovações registradas",(p.approvals||[]).length],["Anexos do projeto",files.length],["Ações no histórico",(p.events||[]).length]],[70,CW-70]);
-  /* ===== 7 APROVAÇÕES ===== */
-  S(7,"Aprovações");
+  table(["Indicador","Resultado"],[["Status do projeto",p.status],["Etapas concluídas",cd.length+" de "+p.stages.length+" ("+progress(p)+"%)"],["Verificações atendidas",chk+" de "+chkT],["Primeira / última conclusão de etapa",conc.length?D(conc[0].end)+" / "+D(conc[conc.length-1].end):"-"],["Planilhas do projeto",shs.length],["Anexos do projeto",files.length],["Ações no histórico",(p.events||[]).length]],[70,CW-70]);
+  /* ===== 7 APROVAÇÃO FINAL ===== */
+  S(7,"Aprovação final");
   const apr=[...(p.approvals||[])].sort((a,b)=>String(a.date||"").localeCompare(String(b.date||"")));
-  sub(P+"7.1 Aprovações registradas (ordem cronológica)");
-  if(!apr.length)para("Nenhuma aprovação registrada no sistema.",{i:1,c:GRAY});
-  else{table(["Data","Tipo","Decisão","Aprovador (função)"],apr.map(a=>[D(a.date),a.kind,a.decision,(a.approver||"-")+(a.role?" ("+a.role+")":"")]),[22,56,32,CW-110]);
-   for(let i=0;i<apr.length;i++){const a=apr[i];sub(P+"7."+(i+2)+" "+a.kind+" - "+a.decision);table(["Campo","Registro"],[["Tipo de aprovação",a.kind],["Decisão (aceite/recusa)",a.decision],["Aprovador",a.approver||"-"],["Função / área",a.role||"-"],["Data",D(a.date)],["Parecer / justificativa",a.comment||"Não registrado"]],[50,CW-50]);await evid(a.files,"aprovação "+a.kind)}}
-  sub(P+"7."+(apr.length+2)+" Etapas de validação e aprovação no cronograma");
+  sub(P+"7.1 Etapas de validação e aprovação no cronograma");
   const ev2=p.stages.filter(s=>["14","15","16"].includes(s.number));table(["Nº","Etapa","Status","Responsável","Conclusão"],ev2.map(s=>[s.number,s.name,s.status,s.responsible,D(s.end)]),[10,70,30,36,CW-146]);para("Os pareceres e evidências dessas etapas constam na seção "+P+"2.",{i:1,c:GRAY,s:8.5});
-  sub(P+"7."+(apr.length+3)+" Situação final");
-  const ap=apr.filter(a=>a.kind==="Conclusão do projeto").pop();
-  para("Situação do projeto na data de geração: "+p.status+"."+(ap?"\nAprovação da conclusão do projeto: "+ap.decision+" por "+(ap.approver||"-")+(ap.role?" ("+ap.role+")":"")+" em "+D(ap.date)+"."+(ap.comment?"\nParecer: "+ap.comment:""):"\nAprovação de conclusão do projeto: não registrada até a data de geração."));
+  sub(P+"7.2 Situação final");
+  const s15=p.stages.find(s=>s.number==="15");
+  para("Situação do projeto na data de geração: "+p.status+"."+(s15?"\nEtapa 15 - "+s15.name+": "+s15.status+(s15.end?" em "+D(s15.end):"")+(s15.responsible?" (responsável: "+s15.responsible+")":"")+".":""));
+  if(apr.length){sub(P+"7.3 Aprovações registradas anteriormente");para("Registros feitos no antigo módulo de aprovações, mantidos para rastreabilidade.",{i:1,c:GRAY,s:8.5});
+   table(["Data","Tipo","Decisão","Aprovador (função)"],apr.map(a=>[D(a.date),a.kind,a.decision,(a.approver||"-")+(a.role?" ("+a.role+")":"")]),[22,56,32,CW-110]);
+   for(const a of apr){if((a.comment||"").trim())para(D(a.date)+" - "+a.kind+": "+a.comment,{s:9});await evid(a.files,"aprovação "+a.kind)}}
   para("Documento gerado automaticamente a partir dos registros do sistema em "+gen+"; reflete as informações lançadas pelos responsáveis.",{s:9,i:1,c:GRAY});
   need(40);y+=14;[["Responsável pelo desenvolvimento",p.owner||""],["Alta Diretoria / Aprovação",""]].forEach((r,i)=>{const x=M+i*(CW/2+3),w=CW/2-6;d.setDrawColor(90,96,110);d.line(x,y,x+w,y);txt(r[0],x,y+4.5,{s:8.5,c:GRAY});if(r[1])txt(r[1],x,y+9,{s:9,b:1})});y+=16;txt("Data da impressão: "+now.toLocaleDateString("pt-BR"),M,y,{s:9})
   }
@@ -1509,6 +1515,7 @@ html[data-theme=dark] .shgrid td{border-color:#223049}
 .shgrid.hdr tbody tr:first-child td input{font-weight:800;background:#f4f7fa}
 html[data-theme=dark] .shgrid.hdr tbody tr:first-child td input{background:#172235}
 .shhelp{color:var(--muted);font-size:12.5px;margin-top:8px}
+.shpanel{padding:18px 20px}.shpanel .pagehead{margin-bottom:12px}.shpanel .shwrap{max-height:calc(100vh - 330px)}
 </style>
 <script>
 /* ===== Planilhas montadas dentro do site =====
@@ -1552,7 +1559,7 @@ const F={SUM:(...a)=>nums(a).reduce((s,v)=>s+v,0),AVG:(...a)=>{const n=nums(a);r
  CNT:(...a)=>nums(a).length,CNTA:(...a)=>flat(a).filter(v=>v!==""&&v!=null).length,ROUND:(x,d)=>{const k=Math.pow(10,d||0);return Math.round(x*k)/k},IF:(c,a,b)=>c?a:(b===undefined?false:b),ABS:x=>Math.abs(x)};
 const CACHE=new Map();
 function compile(f){if(CACHE.has(f))return CACHE.get(f);const fn=new Function("V","R","F","return ("+toJS(f)+");");CACHE.set(f,fn);return fn}
-function evalAll(){const memo=new Map(),stack=new Set(),g=SH.cells;
+function evalAll(S0){const memo=new Map(),stack=new Set(),g=(S0||SH).cells;
  const raw=(r,c)=>(g[r]&&g[r][c]!=null)?String(g[r][c]):"";
  const val=(r,c)=>{const k=r+","+c;if(memo.has(k))return memo.get(k);const s=raw(r,c);let v;
   if(s.startsWith("=")){if(stack.has(k))return"#CIRC!";stack.add(k);
@@ -1563,6 +1570,11 @@ function evalAll(){const memo=new Map(),stack=new Set(),g=SH.cells;
  function R(r1,c1,r2,c2){const o=[];for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)o.push(val(r,c));return o}
  return val}
 
+/* ---------- usado pelo relatório ---------- */
+window.sheetColName=L;
+window.sheetsOfProject=pid=>H().filter(s=>s.projectId===pid).sort((a,b)=>String(a.created||"").localeCompare(String(b.created||"")));
+window.sheetGrid=function(s){const val=evalAll(s),g=s.cells||[];let lr=-1,lc=-1;g.forEach((row,r)=>row.forEach((v,c)=>{if(String(v==null?"":v).trim()){lr=Math.max(lr,r);lc=Math.max(lc,c)}}));
+ const out=[];for(let r=0;r<=lr;r++){const row=[];for(let c=0;c<=lc;c++){const raw=String((g[r]&&g[r][c])!=null?g[r][c]:"");if(!raw){row.push("");continue}const v=val(r,c);row.push(typeof v==="number"?(raw.startsWith("=")?showNum(v):raw):String(v))}out.push(row)}return out};
 /* ---------- dados ---------- */
 function blank(r,c){return Array.from({length:r},()=>Array(c).fill(""))}
 function dims(s){return{r:(s.cells||[]).length,c:Math.max(0,...(s.cells||[]).map(x=>x.length))}}
@@ -1583,36 +1595,46 @@ async function flush(){clearTimeout(timer);timer=null;const s=SH;if(!s)return tr
  finally{saving=false;if(again){again=false;flush()}}}
 
 /* ---------- Início: seção Planilhas ---------- */
-window.sheetsHomeHTML=function(){const list=[...H()].sort((a,b)=>String(b.updated||"").localeCompare(String(a.updated||"")));
- return `<div class="hmsec sheets"><h2>Planilhas</h2><span>${list.length}</span><div class="hmsacts"><button class="btn small" onclick="sheetImport()">⇧ Importar do Excel</button><button class="btn small primary" onclick="sheetNew()">＋ Nova planilha</button></div></div>
- ${list.length?`<div class="hmsgrid">${list.map(s=>{const d=dims(s);return `<button class="hmsheet" onclick="sheetOpen('${esc(s.id)}')"><span class="ic">▦</span><div><b>${esc(s.name||"Sem nome")}</b><small>${d.r} linhas × ${d.c} colunas</small><small>Atualizada em ${s.updated?new Date(s.updated).toLocaleDateString("pt-BR"):"—"}${s.updatedBy?" por "+esc(s.updatedBy):""}</small></div></button>`}).join("")}</div>`
- :`<div class="hmempty"><b>Nenhuma planilha ainda</b>Monte tabelas e cálculos aqui mesmo no site, ou importe uma planilha do Excel.</div>`}`};
+const cards=list=>`<div class="hmsgrid">${list.map(s=>{const d=dims(s);return `<button class="hmsheet" onclick="sheetOpen('${esc(s.id)}')"><span class="ic">▦</span><div><b>${esc(s.name||"Sem nome")}</b><small>${d.r} linhas × ${d.c} colunas</small><small>Atualizada em ${s.updated?new Date(s.updated).toLocaleDateString("pt-BR"):"—"}${s.updatedBy?" por "+esc(s.updatedBy):""}</small></div></button>`}).join("")}</div>`;
+/* Início: só planilhas antigas, sem projeto (a seção some quando não houver nenhuma) */
+window.sheetsHomeHTML=function(){const list=H().filter(s=>!s.projectId).sort((a,b)=>String(b.updated||"").localeCompare(String(a.updated||"")));if(!list.length)return"";
+ return `<div class="hmsec sheets"><h2>Planilhas sem projeto</h2><span>${list.length}</span></div>${cards(list)}`};
+/* aba Planilhas dentro do projeto */
+window.projectSheetsHTML=function(p){const list=sheetsOfProject(p.id);
+ return `<div class="panel"><div class="panelhead"><h2>Planilhas do projeto</h2><div class="toolbar"><span class="badge blue">${list.length} planilha(s)</span><button class="btn small" onclick="sheetImport('${esc(p.id)}')">⇧ Importar do Excel</button><button class="btn primary small" onclick="sheetNew('${esc(p.id)}')">＋ Nova planilha</button></div></div><div class="panelbody">
+ <div class="notice blue">Monte aqui tabelas e cálculos de apoio do projeto (custos, lista de materiais, comparativos...). As planilhas entram no relatório de auditoria do projeto.</div>
+ ${list.length?cards(list):`<div class="empty"><div class="big">▦</div><b>Nenhuma planilha neste projeto</b><p>Crie uma planilha nova ou importe uma do Excel.</p></div>`}</div></div>`};
 
-window.sheetNew=async function(){const name=prompt("Nome da nova planilha:","Nova planilha");if(name===null)return;
- const s={__kind:"planilha",id:nid(),name:name.trim()||"Nova planilha",cells:blank(ROWS0,COLS0),header:true,widths:{},created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||""};
- try{setSync("Criando planilha...");await persist(s);setSync("Sincronizado");sheetOpen(s.id)}catch(e){setSync("Erro ao salvar",true);alert("Não foi possível criar a planilha: "+(e.message||JSON.stringify(e)))}};
+window.sheetNew=async function(pid){const name=prompt("Nome da nova planilha:","Nova planilha");if(name===null)return;
+ const s={__kind:"planilha",id:nid(),projectId:pid||null,name:name.trim()||"Nova planilha",cells:blank(ROWS0,COLS0),header:true,widths:{},created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||""};
+ try{setSync("Criando planilha...");await persist(s);if(pid&&typeof addEvent==="function"){const p=projects.find(x=>x.id===pid);if(p){addEvent(p,"Planilha criada",s.name);try{await save(p)}catch(e){}}}setSync("Sincronizado");sheetOpen(s.id)}catch(e){setSync("Erro ao salvar",true);alert("Não foi possível criar a planilha: "+(e.message||JSON.stringify(e)))}};
 
-window.sheetOpen=function(id){const s=H().find(x=>x.id===id);if(!s)return;SH=JSON.parse(JSON.stringify(s));sel={r:0,c:0};window.__inProject=false;window.__inSheet=true;
- document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));document.getElementById("crumb").textContent="Planilhas";drawEditor();const m=document.querySelector(".main");if(m)m.scrollTop=0};
+let inProj=false;
+window.sheetOpen=function(id){const s=H().find(x=>x.id===id);if(!s)return;
+ if(s.projectId&&projects.some(p=>p.id===s.projectId)){if(!window.__inProject||currentId!==s.projectId){currentId=s.projectId;currentTab="sheets";renderProject()}
+  inProj=true;document.querySelectorAll(".projectnav button").forEach(b=>b.classList.toggle("active",/setTab\('sheets'\)/.test(b.getAttribute("onclick")||"")))}
+ else{inProj=false;window.__inProject=false;document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));document.getElementById("crumb").textContent="Planilhas"}
+ SH=JSON.parse(JSON.stringify(s));sel={r:0,c:0};window.__inSheet=true;drawEditor();const m=document.querySelector(".main");if(m&&!inProj)m.scrollTop=0};
+function backOut(){if(inProj&&window.__inProject){setTab("sheets")}else showPage("dashboard")}
 
-window.sheetClose=function(){showPage("dashboard")};
+window.sheetClose=function(){backOut()};
 window.sheetLeave=function(){if(SH&&timer)flush();SH=null;window.__inSheet=false};
 
 /* ---------- editor ---------- */
-function drawEditor(){const d=dims(SH);
- document.getElementById("view").innerHTML=`<div class="pagehead"><div style="flex:1;min-width:0"><div class="eyebrow">Planilha</div><input class="shname" id="shName" value="${esc(SH.name||"")}" title="Clique para renomear"></div>
- <div class="toolbar"><button class="btn" onclick="sheetClose()">← Início</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()">🗑 Excluir</button></div></div>
+function drawEditor(){const d=dims(SH),box=inProj&&document.getElementById("projectContent")||document.getElementById("view");
+ box.innerHTML=`<div class="${inProj?"panel shpanel":""}"><div class="pagehead"><div style="flex:1;min-width:0"><div class="eyebrow">${inProj?"Planilha do projeto":"Planilha"}</div><input class="shname" id="shName" value="${esc(SH.name||"")}" title="Clique para renomear"></div>
+ <div class="toolbar"><button class="btn" onclick="sheetClose()">← ${inProj?"Planilhas do projeto":"Início"}</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()">🗑 Excluir</button></div></div>
  <div class="shbar"><button class="btn small" onclick="sheetAdd('r')">＋ Linha</button><button class="btn small" onclick="sheetAdd('c')">＋ Coluna</button><button class="btn small" onclick="sheetDel('r')">− Excluir linha</button><button class="btn small" onclick="sheetDel('c')">− Excluir coluna</button>
  <label class="btn small" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="shHdr" ${SH.header?"checked":""}> 1ª linha como cabeçalho</label><span class="shstatus" id="shStatus">Salvo</span></div>
  <div class="shfx"><span class="ref" id="shRef">A1</span><span class="fx">fx</span><input id="shFx" placeholder="Digite um valor ou uma fórmula, ex.: =SOMA(B2:B10)"></div>
  <div class="shwrap"><table class="shgrid${SH.header?" hdr":""}" id="shGrid" style="width:${46+Array.from({length:d.c},(_,c)=>(SH.widths&&SH.widths[c])||120).reduce((a,b)=>a+b,0)}px"><colgroup><col style="width:46px">${Array.from({length:d.c},(_,c)=>`<col style="width:${(SH.widths&&SH.widths[c])||120}px">`).join("")}</colgroup>
  <thead><tr><th class="corner"></th>${Array.from({length:d.c},(_,c)=>`<th data-ch="${c}">${L(c)}</th>`).join("")}</tr></thead>
  <tbody>${SH.cells.map((row,r)=>`<tr><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>`<td><input data-r="${r}" data-c="${c}"></td>`).join("")}</tr>`).join("")}</tbody></table></div>
- <div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=MÁXIMO(D2:D9)</code> · <code>=ARRED(E2/3;2)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita, setas navegam.</div>`;
+ <div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=MÁXIMO(D2:D9)</code> · <code>=ARRED(E2/3;2)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita, setas navegam.</div></div>`;
  const grid=document.getElementById("shGrid");
  paint();
- grid.addEventListener("focusin",e=>{const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("num","err");i.dataset.orig=i.value;mark()});
- grid.addEventListener("focusout",e=>{const i=e.target;if(!i.dataset||i.dataset.r==null)return;commit(+i.dataset.r,+i.dataset.c,i.value);paint()});
+ grid.addEventListener("focusin",e=>{if(!SH)return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("num","err");i.dataset.orig=i.value;mark()});
+ grid.addEventListener("focusout",e=>{if(!SH)return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;commit(+i.dataset.r,+i.dataset.c,i.value);paint()});
  grid.addEventListener("input",e=>{const i=e.target;if(i.dataset&&i.dataset.r!=null)document.getElementById("shFx").value=i.value});
  grid.addEventListener("keydown",e=>{const i=e.target;if(!i.dataset||i.dataset.r==null)return;const r=+i.dataset.r,c=+i.dataset.c;
   if(e.key==="Enter"){e.preventDefault();go(r+(e.shiftKey?-1:1),c)}else if(e.key==="ArrowDown"){e.preventDefault();go(r+1,c)}else if(e.key==="ArrowUp"){e.preventDefault();go(r-1,c)}
@@ -1628,9 +1650,9 @@ const rawAt=(r,c)=>(SH.cells[r]&&SH.cells[r][c]!=null)?String(SH.cells[r][c]):""
 const cellInput=(r,c)=>document.querySelector(`#shGrid input[data-r="${r}"][data-c="${c}"]`);
 function commit(r,c,v){if(!SH||!SH.cells[r])return;if(rawAt(r,c)===v)return;SH.cells[r][c]=v;dirty()}
 function go(r,c){const d=dims(SH);r=Math.max(0,Math.min(d.r-1,r));const i=cellInput(r,c);if(i){i.focus();i.select&&i.select()}}
-function mark(){document.querySelectorAll("#shGrid th.on").forEach(t=>t.classList.remove("on"));const a=document.querySelector(`#shGrid th[data-ch="${sel.c}"]`),b=document.querySelector(`#shGrid th[data-rh="${sel.r}"]`);if(a)a.classList.add("on");if(b)b.classList.add("on");
+function mark(){if(!SH)return;document.querySelectorAll("#shGrid th.on").forEach(t=>t.classList.remove("on"));const a=document.querySelector(`#shGrid th[data-ch="${sel.c}"]`),b=document.querySelector(`#shGrid th[data-rh="${sel.r}"]`);if(a)a.classList.add("on");if(b)b.classList.add("on");
  const ref=document.getElementById("shRef"),fx=document.getElementById("shFx");if(ref)ref.textContent=L(sel.c)+(sel.r+1);if(fx&&document.activeElement!==fx)fx.value=rawAt(sel.r,sel.c)}
-function paint(){const val=evalAll(),act=document.activeElement;document.querySelectorAll("#shGrid td input").forEach(i=>{if(i===act)return;const r=+i.dataset.r,c=+i.dataset.c,raw=rawAt(r,c);
+function paint(){if(!SH)return;const val=evalAll(),act=document.activeElement;document.querySelectorAll("#shGrid td input").forEach(i=>{if(i===act)return;const r=+i.dataset.r,c=+i.dataset.c,raw=rawAt(r,c);
  if(!raw){i.value="";i.className="";return}const v=val(r,c);
  if(typeof v==="number"){i.value=raw.startsWith("=")?showNum(v):raw;i.className="num"}else{i.value=String(v);i.className=/^#(ERRO|DIV|CIRC)/.test(String(v))&&raw.startsWith("=")?"err":""}
  i.title=raw.startsWith("=")?raw:""})}
@@ -1641,7 +1663,7 @@ window.sheetDel=function(k){const d=dims(SH);if(k==="r"){if(d.r<=1)return;const 
 window.sheetDelete=async function(){if(!SH)return;if(!confirm(`Excluir a planilha "${SH.name}" para todos os usuários?\n\nEsta ação não pode ser desfeita.`))return;clearTimeout(timer);
  try{const {data,error}=await supabaseClient.from("projects").delete().eq("id",SH.id).select("id");if(error)throw error;
   if(!data||!data.length){alert("O banco de dados não autorizou a exclusão (falta permissão de exclusão para o seu usuário).");return}
-  window.HSHEETS=H().filter(x=>x.id!==SH.id);SH=null;showPage("dashboard")}catch(e){alert("Não foi possível excluir: "+(e.message||JSON.stringify(e)))}};
+  window.HSHEETS=H().filter(x=>x.id!==SH.id);if(SH.projectId&&typeof addEvent==="function"){const p=projects.find(x=>x.id===SH.projectId);if(p){addEvent(p,"Planilha excluída",SH.name);try{await save(p)}catch(e){}}}backOut()}catch(e){alert("Não foi possível excluir: "+(e.message||JSON.stringify(e)))}};
 
 /* ---------- Excel: baixar ---------- */
 window.sheetExport=async function(){if(!SH)return;try{if(timer)await flush();status("Gerando Excel…");await xlsxLib();
@@ -1655,7 +1677,7 @@ window.sheetExport=async function(){if(!SH)return;try{if(timer)await flush();sta
  XLSX.writeFile(wb,String(SH.name||"Planilha").replace(/[^\wÀ-ÿ -]+/g,"_").trim()+".xlsx");status("Excel baixado")}catch(e){status("Erro ao gerar Excel",true);alert(e.message||String(e))}};
 
 /* ---------- Excel: importar (cada aba vira uma planilha) ---------- */
-window.sheetImport=function(){const inp=document.createElement("input");inp.type="file";inp.accept=".xlsx,.xls,.xlsm,.csv,.ods";
+window.sheetImport=function(pid){const inp=document.createElement("input");inp.type="file";inp.accept=".xlsx,.xls,.xlsm,.csv,.ods";
  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{setSync("Importando planilha...");await xlsxLib();
   const wb=XLSX.read(await f.arrayBuffer(),{cellFormula:true,cellNF:true});const base=f.name.replace(/\.[^.]+$/,"");let made=[],cut=false;
   for(const sn of wb.SheetNames){const ws=wb.Sheets[sn];if(!ws||!ws["!ref"])continue;const rg=XLSX.utils.decode_range(ws["!ref"]);
@@ -1664,11 +1686,12 @@ window.sheetImport=function(){const inp=document.createElement("input");inp.type
     if(x.f){try{compile(x.f);v="="+x.f}catch(e){v=x.w!=null?x.w:(x.v!=null?String(x.v):"")}}
     else if(x.t==="n"&&x.w!=null&&!/[\/:]/.test(x.w))v=showNum(x.v);else v=x.w!=null?x.w:(x.v!=null?String(x.v):"");cells[r][c]=v}
    (ws["!cols"]||[]).forEach((w,c)=>{if(w&&c<nc&&w.wpx)widths[c]=Math.max(60,Math.min(400,Math.round(w.wpx)))});
-   const s={__kind:"planilha",id:nid(),name:wb.SheetNames.length>1?base+" – "+sn:base,cells,header:true,widths,created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||"",importedFrom:f.name};
+   const s={__kind:"planilha",id:nid(),projectId:pid||null,name:wb.SheetNames.length>1?base+" – "+sn:base,cells,header:true,widths,created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||"",importedFrom:f.name};
    await persist(s);made.push(s)}
   setSync("Sincronizado");if(!made.length){alert("O arquivo não tem dados para importar.");return}
   if(cut)alert("Atenção: a planilha passou do limite de "+MAXR+" linhas ou "+MAXC+" colunas; só essa parte foi importada.");
-  if(made.length===1)sheetOpen(made[0].id);else{alert(made.length+" abas importadas, cada uma como uma planilha.");showPage("dashboard")}}
+  if(pid&&typeof addEvent==="function"){const p=projects.find(x=>x.id===pid);if(p){addEvent(p,"Planilha importada do Excel",f.name);try{await save(p)}catch(e){}}}
+  if(made.length===1)sheetOpen(made[0].id);else{alert(made.length+" abas importadas, cada uma como uma planilha.");backOut()}}
   catch(e){setSync("Erro na importação",true);alert("Não foi possível importar: "+(e.message||JSON.stringify(e)))}};
  inp.click()};
 /* se o Início já foi desenhado antes deste bloco carregar, redesenha para mostrar as planilhas */
