@@ -1533,6 +1533,9 @@ html[data-theme=dark] .shgrid td .shslot{background:repeating-linear-gradient(45
 .shgrid.hdr tbody tr:first-child td .cel{font-weight:800}
 .shhelp{color:var(--muted);font-size:12.5px;margin-top:8px}
 .shfull{position:fixed;inset:0;z-index:300;background:var(--bg);padding:16px 22px;overflow:auto;border-radius:0!important;margin:0!important;border:0!important;box-shadow:none!important}.shfull .shwrap{max-height:calc(100vh - 215px)}.shfull .shhelp{display:none}
+.shtabs{display:flex;gap:2px;flex-wrap:wrap;border-top:2px solid #1f9d55;margin-top:0;padding:0 6px}
+.shtabs button{border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;background:var(--bg);color:var(--muted);padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.shtabs button.on{background:var(--card);color:#1f7a45;font-weight:800;border-color:#1f9d55;border-top:2px solid var(--card);margin-top:-2px}
 .shpanel{padding:18px 20px}.shpanel .pagehead{margin-bottom:12px}
 .shtpl{display:grid;gap:10px}
 .shtpl label{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--card)}
@@ -1643,7 +1646,8 @@ async function persist(s){s.updated=new Date().toISOString();s.updatedBy=(typeof
  s._serverUpdatedAt=res.data[0].updated_at;const i=H().findIndex(x=>x.id===s.id);const copy={...s};if(i>=0)window.HSHEETS[i]=copy;else window.HSHEETS=[copy,...H()];return true}
 async function reloadSheets(){if(typeof allProjects==="function")projects=await allProjects()}
 function status(t,err){const el=document.getElementById("shStatus");if(el){el.textContent=t;el.style.color=err?"#c74646":""}}
-function dirty(){status("Alterações não salvas…");clearTimeout(timer);timer=setTimeout(flush,1200)}
+function syncCopy(){if(!SH)return;const i=H().findIndex(x=>x.id===SH.id);if(i>=0)window.HSHEETS[i]=JSON.parse(JSON.stringify(SH))}
+function dirty(){syncCopy();status("Alterações não salvas…");clearTimeout(timer);timer=setTimeout(flush,1200)}
 async function flush(){clearTimeout(timer);timer=null;const s=SH;if(!s)return true;if(saving){again=true;return true}saving=true;status("Salvando…");
  try{const ok=await persist(s);if(!ok){status("Conflito de edição",true);alert("A planilha \""+s.name+"\" foi alterada por outra pessoa enquanto você editava. Vou abrir a versão mais recente.");await reloadSheets();const n=H().find(x=>x.id===s.id);if(n&&SH===s){SH=JSON.parse(JSON.stringify(n));drawEditor()}return false}
   status("Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));return true}
@@ -1749,7 +1753,7 @@ function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!ful
  <tbody>${SH.cells.map((row,r)=>`<tr style="height:${Hh(r)}px"><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>{const cv=cov.get(K(r,c));if(cv==="hid")return"";const s=stOf(r,c),cs=cellStyle(s),im=SH.img[K(r,c)],span=cv?` rowspan="${cv.rs}" colspan="${cv.cs}"`:"";
   const inner=im?`<div class="shimg" data-ir="${r}" data-ic="${c}"><img data-path="${esc(im.path||"")}" alt="${esc(im.name||"imagem")}"><div class="shimgbt"><button type="button" data-act="swap" title="Trocar a imagem">↻</button><button type="button" data-act="del" title="Remover a imagem">🗑</button></div></div>`:s.img?`<div class="shslot" data-ir="${r}" data-ic="${c}" title="Inserir imagem do produto">📷 Imagem</div>`:(s.wrap||(cv&&cv.rs>1))?`<textarea class="cel" data-r="${r}" data-c="${c}" style="${cs.el}" rows="1"></textarea>`:`<input class="cel" data-r="${r}" data-c="${c}" style="${cs.el}">`;
   return`<td class="${s.bx?"bx":""}${s.bg?" bgc":""}" data-tr="${r}" data-tc="${c}" style="${cs.td}"${span}>${inner}</td>`}).join("")}</tr>`).join("")}</tbody></table></div>
- ${isPL(SH)?plHint():""}<div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=SEERRO(B2/C2;0)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code> · outra planilha do projeto: <code>='MATRIZ COMPETITIVA'!N8</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita.</div></div>`;
+ ${tabsHTML()}${isPL(SH)?plHint():""}<div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=SEERRO(B2/C2;0)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code> · outra planilha do projeto: <code>='MATRIZ COMPETITIVA'!N8</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita.</div></div>`;
  const grid=document.getElementById("shGrid"),sid=SH.id,ok=()=>SH&&SH.id===sid&&grid.isConnected;
  paint();loadImgs();
  grid.addEventListener("focusin",e=>{if(!ok())return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("err");i.dataset.orig=i.value;mark()});
@@ -1765,6 +1769,9 @@ function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!ful
  fx.addEventListener("change",()=>{commit(sel.r,sel.c,fx.value);paint()});
  document.getElementById("shName").addEventListener("change",e=>{SH.name=e.target.value.trim()||"Sem nome";e.target.value=SH.name;dirty()});
  mark()}
+function tabsHTML(){const list=SH.projectId?sheetsOfProject(SH.projectId):H().filter(s=>!s.projectId);if(list.length<2)return"";
+ return`<div class="shtabs">${list.map(s=>`<button type="button" class="${s.id===SH.id?"on":""}" onclick="sheetTab('${esc(s.id)}')">${esc(s.name||"Sem nome")}</button>`).join("")}</div>`}
+window.sheetTab=async function(id){if(!SH||id===SH.id)return;const a=document.activeElement;if(a&&a.blur)a.blur();if(timer)await flush();sheetOpen(id)};
 function plHint(){const f=String(SH.cells[1][2]||"");if(!/!/.test(f))return`<div class="notice" style="margin-top:10px">A <b>Receita Bruta (C2)</b> não está ligada à Matriz competitiva. Crie a Matriz neste projeto ou digite em C2: <code>='MATRIZ COMPETITIVA'!N8</code></div>`;
  const mz=matrixOf(SH.projectId),j=mz&&String((mz.cells[7]||[])[9]||"").trim();
  return`<div class="notice blue" style="margin-top:10px">🔗 A <b>Receita Bruta (C2)</b> vem da <b>${esc(mz?mz.name:"Matriz competitiva")}</b>: preço de <b>FÁBRICA</b> (N8), calculado a partir da <b>POSIC HITECH</b> (J8).${mz&&!j?` <b style="color:#c74646">A POSIC HITECH (J8) da matriz ainda está vazia — por isso a Receita Bruta está zerada.</b>`:""}</div>`}
