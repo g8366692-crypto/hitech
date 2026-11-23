@@ -1527,6 +1527,7 @@ html[data-theme=dark] .shgrid td .cel{color:var(--text)}
 html[data-theme=dark] .shgrid td .shslot{background:repeating-linear-gradient(45deg,transparent 0 8px,#172235 8px 16px)}
 .shgrid.hdr tbody tr:first-child td .cel{font-weight:800}
 .shhelp{color:var(--muted);font-size:12.5px;margin-top:8px}
+.shfull{position:fixed;inset:0;z-index:300;background:var(--bg);padding:16px 22px;overflow:auto;border-radius:0!important;margin:0!important;border:0!important;box-shadow:none!important}.shfull .shwrap{max-height:calc(100vh - 215px)}.shfull .shhelp{display:none}
 .shpanel{padding:18px 20px}.shpanel .pagehead{margin-bottom:12px}
 .shtpl{display:grid;gap:10px}
 .shtpl label{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--card)}
@@ -1543,7 +1544,7 @@ html[data-theme=dark] .shtpl label:has(input:checked){background:#2a1c10}
 const ROWS0=20,COLS0=8,MAXR=1000,MAXC=60;
 const L=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
 const CI=s=>{let n=0;for(const ch of s.toUpperCase())n=n*26+(ch.charCodeAt(0)-64);return n-1};
-let SH=null,sel={r:0,c:0},timer=null,saving=false,again=false,inProj=false;
+let SH=null,sel={r:0,c:0},timer=null,saving=false,again=false,inProj=false,full=false,zoom=1;
 const H=()=>window.HSHEETS||[];
 const nid=()=>typeof newId==="function"?newId():String(Date.now());
 const K=(r,c)=>r+","+c;
@@ -1714,25 +1715,26 @@ window.sheetOpen=function(id){const s=H().find(x=>x.id===id);if(!s)return;
  sel={r:0,c:0};window.__inSheet=true;drawEditor();const m=document.querySelector(".main");if(m&&!inProj)m.scrollTop=0};
 function backOut(){if(inProj&&window.__inProject){setTab("sheets")}else showPage("dashboard")}
 window.sheetClose=function(){backOut()};
-window.sheetLeave=function(){if(SH&&timer)flush();SH=null;window.__inSheet=false};
+window.sheetLeave=function(){if(SH&&timer)flush();SH=null;full=false;const fh=document.getElementById("shFullHost");if(fh)fh.innerHTML="";window.__inSheet=false};
 
 /* ---------- editor ---------- */
 const covered=()=>{const m=new Map();(SH.merges||[]).forEach(([r1,c1,r2,c2])=>{for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)m.set(K(r,c),(r===r1&&c===c1)?{rs:r2-r1+1,cs:c2-c1+1}:"hid")});return m};
 const stOf=(r,c)=>(SH.st||{})[K(r,c)]||{};
 function cellStyle(s){let td="",el="";if(s.bg)td+=`background:${s.bg};`;if(s.b)el+="font-weight:800;";if(s.fg)el+=`color:${s.fg};`;if(s.sz)el+=`font-size:${s.sz}px;`;if(s.al)el+=`text-align:${{l:"left",c:"center",r:"right"}[s.al]};`;return{td,el}}
-function drawEditor(){const d=dims(SH),box=inProj&&document.getElementById("projectContent")||document.getElementById("view"),cov=covered(),W=c=>(SH.widths&&SH.widths[c])||120,Hh=r=>(SH.heights&&SH.heights[r])||28;
- box.innerHTML=`<div class="${inProj?"panel shpanel":""}"><div class="pagehead"><div style="flex:1;min-width:0"><div class="eyebrow">${inProj?"Planilha do projeto":"Planilha"}</div><input class="shname" id="shName" value="${esc(SH.name||"")}" title="Clique para renomear"></div>
- <div class="toolbar"><button class="btn" onclick="sheetClose()">← ${inProj?"Planilhas do projeto":"Início"}</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()">🗑 Excluir</button></div></div>
+function fullHost(){let h=document.getElementById("shFullHost");if(!h){h=document.createElement("div");h.id="shFullHost";document.body.appendChild(h)}return h}
+function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!full)fh.innerHTML="";if(full){const nb=inProj&&document.getElementById("projectContent")||document.getElementById("view");if(nb)nb.innerHTML=`<div class="panel"><div class="panelbody muted">Planilha aberta em tela cheia.</div></div>`}const d=dims(SH),box=full?fullHost():(inProj&&document.getElementById("projectContent")||document.getElementById("view")),cov=covered(),W=c=>(SH.widths&&SH.widths[c])||120,Hh=r=>(SH.heights&&SH.heights[r])||28;
+ box.innerHTML=`<div id="shRoot" class="${inProj?"panel shpanel":""}${full?" shfull":""}"><div class="pagehead"><div style="flex:1;min-width:0"><div class="eyebrow">${inProj?"Planilha do projeto":"Planilha"}</div><input class="shname" id="shName" value="${esc(SH.name||"")}" title="Clique para renomear"></div>
+ <div class="toolbar"><button class="btn" onclick="sheetFull()" title="Ver a planilha na tela inteira (Esc para sair)">${full?"🗗 Sair da tela cheia":"⛶ Tela cheia"}</button><button class="btn" onclick="sheetClose()">← ${inProj?"Planilhas do projeto":"Início"}</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()">🗑 Excluir</button></div></div>
  <div class="shbar"><button class="btn small" onclick="sheetAdd('r')">＋ Linha</button><button class="btn small" onclick="sheetAdd('c')">＋ Coluna</button><button class="btn small" onclick="sheetDel('r')">− Linha</button><button class="btn small" onclick="sheetDel('c')">− Coluna</button><span class="sep"></span>
  <button class="btn small" id="shB" onclick="sheetFmt('b')" title="Negrito"><b>N</b></button>
  <select id="shBg" onchange="sheetFmt('bg',this.value)" title="Cor de fundo"><option value="">Fundo: nenhum</option><option value="#ffff00">Amarelo</option><option value="#ddebf7">Azul claro</option><option value="#e2efda">Verde claro</option><option value="#fce4d6">Laranja claro</option><option value="#ededed">Cinza</option></select>
  <select id="shAl" onchange="sheetFmt('al',this.value)" title="Alinhamento"><option value="">Alinhar: auto</option><option value="l">Esquerda</option><option value="c">Centro</option><option value="r">Direita</option></select>
  <select id="shFm" onchange="sheetFmt('fmt',this.value)" title="Formato do número">${FMTS.map(([v,t])=>`<option value="${v}">${v?t:"Número: geral"}</option>`).join("")}</select>
  <button class="btn small" id="shBx" onclick="sheetFmt('bx')" title="Borda">▢ Borda</button>
- <button class="btn small" onclick="sheetImg()" title="Inserir imagem na célula selecionada">🖼 Imagem</button>
+ <button class="btn small" onclick="sheetImg()" title="Inserir imagem na célula selecionada">🖼 Imagem</button><span class="sep"></span><button class="btn small" onclick="sheetZoom(-1)" title="Diminuir zoom">−</button><span id="shZm" style="min-width:42px;text-align:center;font-size:13px;color:var(--muted)">${Math.round(zoom*100)}%</span><button class="btn small" onclick="sheetZoom(1)" title="Aumentar zoom">＋</button><button class="btn small" onclick="sheetZoom(0)" title="Ajustar a planilha inteira à largura da tela">↔ Ajustar</button>
  <span class="shstatus" id="shStatus">Salvo</span></div>
  <div class="shfx"><span class="ref" id="shRef">A1</span><span class="fx">fx</span><input id="shFx" placeholder="Digite um valor ou uma fórmula, ex.: =SOMA(B2:B10)"></div>
- <div class="shwrap"><table class="shgrid${SH.header?" hdr":""}" id="shGrid" style="width:${46+Array.from({length:d.c},(_,c)=>W(c)).reduce((a,b)=>a+b,0)}px"><colgroup><col style="width:46px">${Array.from({length:d.c},(_,c)=>`<col style="width:${W(c)}px">`).join("")}</colgroup>
+ <div class="shwrap"><table class="shgrid${SH.header?" hdr":""}" id="shGrid" style="zoom:${zoom};width:${46+Array.from({length:d.c},(_,c)=>W(c)).reduce((a,b)=>a+b,0)}px"><colgroup><col style="width:46px">${Array.from({length:d.c},(_,c)=>`<col style="width:${W(c)}px">`).join("")}</colgroup>
  <thead><tr><th class="corner"></th>${Array.from({length:d.c},(_,c)=>`<th data-ch="${c}">${L(c)}</th>`).join("")}</tr></thead>
  <tbody>${SH.cells.map((row,r)=>`<tr style="height:${Hh(r)}px"><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>{const cv=cov.get(K(r,c));if(cv==="hid")return"";const s=stOf(r,c),cs=cellStyle(s),im=SH.img[K(r,c)],span=cv?` rowspan="${cv.rs}" colspan="${cv.cs}"`:"";
   const inner=im?`<div class="shimg" data-ir="${r}" data-ic="${c}"><img data-path="${esc(im.path||"")}" alt="${esc(im.name||"imagem")}"></div>`:s.img?`<div class="shslot" data-ir="${r}" data-ic="${c}" title="Inserir imagem do produto">📷 Imagem</div>`:(s.wrap||(cv&&cv.rs>1))?`<textarea class="cel" data-r="${r}" data-c="${c}" style="${cs.el}" rows="1"></textarea>`:`<input class="cel" data-r="${r}" data-c="${c}" style="${cs.el}">`;
@@ -1762,6 +1764,12 @@ function mark(){if(!SH)return;document.querySelectorAll("#shGrid th.on,#shGrid t
  const s=stOf(sel.r,sel.c),q=id=>document.getElementById(id);if(q("shB"))q("shB").classList.toggle("on",!!s.b);if(q("shBx"))q("shBx").classList.toggle("on",!!s.bx);if(q("shBg"))q("shBg").value=s.bg||"";if(q("shAl"))q("shAl").value=s.al||"";if(q("shFm"))q("shFm").value=s.fmt||""}
 function paint(){if(!SH)return;const val=evalAll(),act=document.activeElement;document.querySelectorAll("#shGrid .cel").forEach(i=>{if(i===act)return;const r=+i.dataset.r,c=+i.dataset.c,raw=rawAt(r,c),s=stOf(r,c);
  const dp=display(SH,val,r,c);i.value=dp.t;i.classList.toggle("err",dp.e);if(!s.al)i.style.textAlign=dp.n?"right":"";i.title=raw.startsWith("=")?raw:""})}
+/* tela cheia e zoom */
+window.sheetFull=function(){const a=document.activeElement;if(a&&a.blur)a.blur();full=!full;drawEditor()};
+window.sheetZoom=function(d){const g=document.getElementById("shGrid"),w=document.querySelector("#shRoot .shwrap");if(!g)return;
+ if(d===0){const tw=parseFloat(g.style.width)||g.offsetWidth;zoom=Math.max(.4,Math.min(1.5,(w.clientWidth-4)/tw))}else zoom=Math.max(.4,Math.min(1.6,Math.round((zoom+d*.1)*10)/10));
+ g.style.zoom=zoom;const z=document.getElementById("shZm");if(z)z.textContent=Math.round(zoom*100)+"%"};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&full&&SH&&!(document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains("cel"))){full=false;drawEditor()}});
 /* imagens */
 const URLS=new Map();
 async function loadImgs(){for(const im of document.querySelectorAll("#shGrid img[data-path]")){const p=im.dataset.path;if(!p)continue;let u=URLS.get(p);
