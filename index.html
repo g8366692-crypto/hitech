@@ -1597,9 +1597,13 @@ const F={SUM:(...a)=>nums(a).reduce((s,v)=>s+v,0),AVG:(...a)=>{const n=nums(a);r
  IFERR:(v,alt)=>(isErr(v)||(typeof v==="number"&&isNaN(v)))?alt:v};
 const CACHE=new Map();
 function compile(f){if(CACHE.has(f))return CACHE.get(f);const fn=new Function("V","R","F","XV","XR","return ("+toJS(f)+");");CACHE.set(f,fn);return fn}
+/* matriz competitiva do projeto (a mais recente) */
+function matrixOf(pid){return H().filter(s=>(s.projectId||null)===(pid||null)&&/MATRIZ/i.test(String(s.name||""))).sort((a,b)=>String(b.updated||"").localeCompare(String(a.updated||"")))[0]||null}
+const isPL=s=>/^MODELO FIN/i.test(String(s.name||""))&&/receita bruta/i.test(String((s.cells[1]||[])[1]||""));
 /* acha outra planilha do mesmo projeto pelo nome (aceita "Arquivo – NOME" vindo de importação) */
 function findSheet(from,name){const n=String(name).trim().toUpperCase(),pool=H().filter(s=>(s.projectId||null)===(from.projectId||null)&&s.id!==from.id);
- const pick=pool.find(s=>String(s.name||"").trim().toUpperCase()===n)||pool.find(s=>String(s.name||"").trim().toUpperCase().endsWith(" – "+n));
+ let pick=pool.find(s=>String(s.name||"").trim().toUpperCase()===n)||pool.find(s=>String(s.name||"").trim().toUpperCase().endsWith(" – "+n));
+ if(!pick&&/MATRIZ/.test(n))pick=matrixOf(from.projectId);
  if(!pick)return null;return SH&&SH.id===pick.id?SH:pick}
 function evalAll(S0,ctx){const S=S0||SH;ctx=ctx||{stack:new Set(),ev:new Map()};if(ctx.ev.has(S.id))return ctx.ev.get(S.id);
  const memo=new Map(),g=S.cells||[];
@@ -1705,7 +1709,7 @@ window.sheetNew=function(pid){const p=pid&&projects.find(x=>x.id===pid);
   try{setSync("Criando planilha...");let made=[];
    if(v==="blank")made.push(mk(pid,(document.getElementById("shNm").value.trim()||"Nova planilha"),{cells:blank(ROWS0,COLS0),header:true,widths:{},st:{},merges:[],heights:{},img:{}}));
    if(v==="pd"||v==="matriz")made.push(mk(pid,uniqName(pid,"MATRIZ COMPETITIVA"),tplMatriz(p&&p.name)));
-   if(v==="pd"||v==="pl"){const mz=v==="pd"?made[made.length-1].name:null;made.push(mk(pid,uniqName(pid,"MODELO FIN P&L"),tplPL(mz)))}
+   if(v==="pd"||v==="pl"){const ex=matrixOf(pid),mz=v==="pd"?made[made.length-1].name:(ex?ex.name:null);made.push(mk(pid,uniqName(pid,"MODELO FIN P&L"),tplPL(mz)))}
    for(const s of made)await persist(s);
    logEvent(pid,"Planilha criada",made.map(s=>s.name).join(" e "));setSync("Sincronizado");closeModal();sheetOpen(made[0].id)}
   catch(e){setSync("Erro ao salvar",true);alert("Não foi possível criar a planilha: "+(e.message||JSON.stringify(e)))}finally{btn.disabled=false;btn.textContent="Salvar projeto"}};
@@ -1717,7 +1721,8 @@ window.sheetOpen=function(id){const s=H().find(x=>x.id===id);if(!s)return;
   inProj=true;document.querySelectorAll(".projectnav button").forEach(b=>b.classList.toggle("active",/setTab\('sheets'\)/.test(b.getAttribute("onclick")||"")))}
  else{inProj=false;window.__inProject=false;document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));document.getElementById("crumb").textContent="Planilhas"}
  SH=JSON.parse(JSON.stringify(s));["st","widths","heights","img"].forEach(k=>{if(!SH[k]||typeof SH[k]!=="object")SH[k]={}});if(!Array.isArray(SH.merges))SH.merges=[];
- sel={r:0,c:0};window.__inSheet=true;drawEditor();const m=document.querySelector(".main");if(m&&!inProj)m.scrollTop=0};
+ let linked="";if(isPL(SH)&&!String(SH.cells[1][2]||"").trim()){const mz=matrixOf(SH.projectId);if(mz){SH.cells[1][2]=`='${String(mz.name).replace(/'/g,"''")}'!N8`;linked=mz.name}}
+ sel={r:0,c:0};window.__inSheet=true;drawEditor();if(linked){dirty();status("Receita Bruta ligada à "+linked)}const m=document.querySelector(".main");if(m&&!inProj)m.scrollTop=0};
 function backOut(){if(inProj&&window.__inProject){setTab("sheets")}else showPage("dashboard")}
 window.sheetClose=function(){backOut()};
 window.sheetLeave=function(){if(SH&&timer)flush();SH=null;full=false;const fh=document.getElementById("shFullHost");if(fh)fh.innerHTML="";window.__inSheet=false};
@@ -1744,7 +1749,7 @@ function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!ful
  <tbody>${SH.cells.map((row,r)=>`<tr style="height:${Hh(r)}px"><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>{const cv=cov.get(K(r,c));if(cv==="hid")return"";const s=stOf(r,c),cs=cellStyle(s),im=SH.img[K(r,c)],span=cv?` rowspan="${cv.rs}" colspan="${cv.cs}"`:"";
   const inner=im?`<div class="shimg" data-ir="${r}" data-ic="${c}"><img data-path="${esc(im.path||"")}" alt="${esc(im.name||"imagem")}"><div class="shimgbt"><button type="button" data-act="swap" title="Trocar a imagem">↻</button><button type="button" data-act="del" title="Remover a imagem">🗑</button></div></div>`:s.img?`<div class="shslot" data-ir="${r}" data-ic="${c}" title="Inserir imagem do produto">📷 Imagem</div>`:(s.wrap||(cv&&cv.rs>1))?`<textarea class="cel" data-r="${r}" data-c="${c}" style="${cs.el}" rows="1"></textarea>`:`<input class="cel" data-r="${r}" data-c="${c}" style="${cs.el}">`;
   return`<td class="${s.bx?"bx":""}${s.bg?" bgc":""}" data-tr="${r}" data-tc="${c}" style="${cs.td}"${span}>${inner}</td>`}).join("")}</tr>`).join("")}</tbody></table></div>
- <div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=SEERRO(B2/C2;0)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code> · outra planilha do projeto: <code>='MATRIZ COMPETITIVA'!N8</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita.</div></div>`;
+ ${isPL(SH)?plHint():""}<div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=SEERRO(B2/C2;0)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code> · outra planilha do projeto: <code>='MATRIZ COMPETITIVA'!N8</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita.</div></div>`;
  const grid=document.getElementById("shGrid"),sid=SH.id,ok=()=>SH&&SH.id===sid&&grid.isConnected;
  paint();loadImgs();
  grid.addEventListener("focusin",e=>{if(!ok())return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("err");i.dataset.orig=i.value;mark()});
@@ -1760,6 +1765,9 @@ function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!ful
  fx.addEventListener("change",()=>{commit(sel.r,sel.c,fx.value);paint()});
  document.getElementById("shName").addEventListener("change",e=>{SH.name=e.target.value.trim()||"Sem nome";e.target.value=SH.name;dirty()});
  mark()}
+function plHint(){const f=String(SH.cells[1][2]||"");if(!/!/.test(f))return`<div class="notice" style="margin-top:10px">A <b>Receita Bruta (C2)</b> não está ligada à Matriz competitiva. Crie a Matriz neste projeto ou digite em C2: <code>='MATRIZ COMPETITIVA'!N8</code></div>`;
+ const mz=matrixOf(SH.projectId),j=mz&&String((mz.cells[7]||[])[9]||"").trim();
+ return`<div class="notice blue" style="margin-top:10px">🔗 A <b>Receita Bruta (C2)</b> vem da <b>${esc(mz?mz.name:"Matriz competitiva")}</b>: preço de <b>FÁBRICA</b> (N8), calculado a partir da <b>POSIC HITECH</b> (J8).${mz&&!j?` <b style="color:#c74646">A POSIC HITECH (J8) da matriz ainda está vazia — por isso a Receita Bruta está zerada.</b>`:""}</div>`}
 const rawAt=(r,c)=>(SH.cells[r]&&SH.cells[r][c]!=null)?String(SH.cells[r][c]):"";
 const cellEl=(r,c)=>document.querySelector(`#shGrid .cel[data-r="${r}"][data-c="${c}"]`);
 function commit(r,c,v){if(!SH||!SH.cells[r])return;const f=stOf(r,c).fmt||"";if(/^pct/.test(f)&&/^-?\d+([.,]\d+)?$/.test(v.trim()))v=v.trim()+"%";if(rawAt(r,c)===v)return;SH.cells[r][c]=v;dirty()}
