@@ -1396,7 +1396,8 @@ window.gerarRelatorioGeral=async function(opts){opts=(opts&&opts.only)?opts:{};c
     const head=["#"].concat(hdr?rows[0].slice(c0,c1):Array.from({length:cols},(_,k)=>sheetColName(c0+k)));
     const body=(hdr?rows.slice(1):rows).map((r,k)=>[String(k+(hdr?2:1))].concat(r.slice(c0,c1)));
     table(head,body,w)}
-   if(gr.length>MR)para("Mostradas as "+MR+" primeiras linhas de "+gr.length+"; a planilha completa está no sistema.",{i:1,c:GRAY,s:8.5})}
+   if(gr.length>MR)para("Mostradas as "+MR+" primeiras linhas de "+gr.length+"; a planilha completa está no sistema.",{i:1,c:GRAY,s:8.5});
+   const ims=typeof sheetImages==="function"?sheetImages(sh):[];if(ims.length)await evid(ims,"imagens da planilha "+(sh.name||""))}
   /* ===== 6 ENCERRAMENTO ===== */
   S(6,"Encerramento e rastreabilidade");
   sub(P+"6.1 Atividades concluídas");
@@ -1482,7 +1483,7 @@ setTimeout(run,600)})();
 
 <style>
 /* ===== Planilhas (montadas dentro do site) ===== */
-.hmsec.sheets{margin-top:34px;align-items:center}.hmsec.sheets .hmsacts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.hmsec.sheets{margin-top:34px;align-items:center}
 .hmsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .hmsheet{display:flex;gap:14px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;color:var(--text);width:100%}
 .hmsheet:hover{border-color:#1f9d55}
@@ -1493,88 +1494,133 @@ html[data-theme=dark] .hmsheet .ic{background:#163626;color:#6fd59a}
 .hmsheet>div{min-width:0}
 .shname{font-size:24px;font-weight:800;color:var(--navy);border:1px solid transparent;background:transparent;border-radius:8px;padding:2px 6px;margin-left:-6px;width:min(560px,100%)}
 .shname:hover,.shname:focus{border-color:var(--line);background:var(--card);outline:none}
-.shbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.shbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+.shbar .sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+.shbar select{border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--card);color:var(--text);font-size:13px}
+.shbar .btn.on{background:#fff2e9;border-color:#f47721;color:#a84d0b}
 .shfx{display:flex;gap:8px;align-items:center;margin:0 0 10px}
 .shfx .ref{flex:none;width:64px;text-align:center;font-weight:700;color:var(--navy);border:1px solid var(--line);border-radius:8px;padding:7px 4px;background:var(--card)}
 .shfx .fx{flex:none;color:var(--muted);font-style:italic;font-weight:700}
 .shfx input{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--card);color:var(--text)}
 .shstatus{margin-left:auto;color:var(--muted);font-size:12.5px}
-.shwrap{overflow:auto;max-height:calc(100vh - 290px);border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.shwrap{overflow:auto;max-height:calc(100vh - 330px);border:1px solid var(--line);border-radius:10px;background:var(--card)}
 .shgrid{border-collapse:collapse;table-layout:fixed}
-.shgrid th{position:sticky;top:0;z-index:2;background:#eef2f6;color:#5a6b7d;font-weight:600;font-size:12px;border:1px solid #d9e0e8;height:26px;text-align:center}
+.shgrid th{position:sticky;top:0;z-index:2;background:#eef2f6;color:#5a6b7d;font-weight:600;font-size:12px;border:1px solid #d9e0e8;height:24px;text-align:center}
 .shgrid tbody th{position:sticky;left:0;z-index:1;width:46px}
 .shgrid thead th.corner{left:0;z-index:3;width:46px}
 .shgrid th.on{background:#dbe7f4;color:var(--navy)}
 html[data-theme=dark] .shgrid th{background:#1a2538;border-color:#26344d;color:#9fb0c8}
-.shgrid td{border:1px solid #e1e6ec;padding:0;height:28px}
-html[data-theme=dark] .shgrid td{border-color:#223049}
-.shgrid td input{width:100%;height:28px;border:0;padding:3px 7px;background:transparent;color:var(--text);font-size:13.5px;outline:none}
-.shgrid td input.num{text-align:right}
-.shgrid td input.err{color:#c74646}
-.shgrid td input:focus{box-shadow:inset 0 0 0 2px #1f9d55;background:var(--card);text-align:left}
-.shgrid.hdr tbody tr:first-child td input{font-weight:800;background:#f4f7fa}
-html[data-theme=dark] .shgrid.hdr tbody tr:first-child td input{background:#172235}
+.shgrid td{border:1px solid #e6eaef;padding:0;height:28px;position:relative;background:#fff;vertical-align:middle}
+html[data-theme=dark] .shgrid td{border-color:#223049;background:var(--card)}
+.shgrid td.bx{border:1px solid #2b2f36}
+html[data-theme=dark] .shgrid td.bx{border-color:#8a9ab2}
+.shgrid td .cel{display:block;width:100%;height:100%;min-height:26px;border:0;padding:3px 6px;background:transparent;color:#1d2b3a;font:inherit;font-size:13px;outline:none;resize:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+html[data-theme=dark] .shgrid td .cel{color:var(--text)}
+.shgrid td textarea.cel{white-space:pre-wrap;line-height:1.25;padding-top:4px}
+.shgrid td .cel:focus{box-shadow:inset 0 0 0 2px #1f9d55;background:#fff;text-align:left!important;color:#1d2b3a}
+.shgrid td .cel.err{color:#c74646!important}
+.shgrid td.sel{box-shadow:inset 0 0 0 2px #1f9d55}
+.shgrid td .shimg{position:absolute;inset:3px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.shgrid td .shimg img{max-width:100%;max-height:100%;object-fit:contain}
+.shgrid td .shslot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a99a8;font-size:12px;cursor:pointer;background:repeating-linear-gradient(45deg,transparent 0 8px,#f3f6f9 8px 16px)}
+.shgrid td .shslot:hover{color:#1f7a45}
+html[data-theme=dark] .shgrid td .shslot{background:repeating-linear-gradient(45deg,transparent 0 8px,#172235 8px 16px)}
+.shgrid.hdr tbody tr:first-child td .cel{font-weight:800}
 .shhelp{color:var(--muted);font-size:12.5px;margin-top:8px}
-.shpanel{padding:18px 20px}.shpanel .pagehead{margin-bottom:12px}.shpanel .shwrap{max-height:calc(100vh - 330px)}
+.shpanel{padding:18px 20px}.shpanel .pagehead{margin-bottom:12px}
+.shtpl{display:grid;gap:10px}
+.shtpl label{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--card)}
+.shtpl label:has(input:checked){border-color:#f47721;background:#fff8f2}
+html[data-theme=dark] .shtpl label:has(input:checked){background:#2a1c10}
+.shtpl b{display:block;color:var(--navy)}.shtpl small{color:var(--muted)}
 </style>
 <script>
 /* ===== Planilhas montadas dentro do site =====
    Ficam na mesma tabela "projects" do Supabase, marcadas com data.__kind="planilha"
-   (não aparecem como projeto). Fórmulas em português (SOMA, MÉDIA...) ou inglês. */
+   (não aparecem como projeto). Guardam: cells (valores/fórmulas), st (formatação por célula "l,c"),
+   merges ([l1,c1,l2,c2]), widths/heights, img (imagens por célula "l,c"). */
 (function(){
 const ROWS0=20,COLS0=8,MAXR=1000,MAXC=60;
 const L=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
 const CI=s=>{let n=0;for(const ch of s.toUpperCase())n=n*26+(ch.charCodeAt(0)-64);return n-1};
-let SH=null,sel={r:0,c:0},timer=null,saving=false,again=false;
+let SH=null,sel={r:0,c:0},timer=null,saving=false,again=false,inProj=false;
 const H=()=>window.HSHEETS||[];
 const nid=()=>typeof newId==="function"?newId():String(Date.now());
+const K=(r,c)=>r+","+c;
 const ldd=(u,m)=>new Promise((ok,ko)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>ko(new Error(m));document.head.appendChild(s)});
 async function xlsxLib(){if(!window.XLSX)await ldd("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","Não foi possível carregar a biblioteca do Excel. Verifique a internet.")}
 
-/* ---------- números ---------- */
+/* ---------- números e formatos ---------- */
 function num(v){if(typeof v==="number")return v;let s=String(v==null?"":v).trim();if(!s||/^0\d/.test(s))return null;s=s.replace(/^R\$\s*/,"");let pct=false;if(s.endsWith("%")){pct=true;s=s.slice(0,-1).trim()}
  if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s))s=s.replace(/\./g,"").replace(",",".");else if(/^-?\d+,\d+$/.test(s))s=s.replace(",",".");else if(!/^-?\d+(\.\d+)?$/.test(s))return null;
  const n=parseFloat(s);return isFinite(n)?(pct?n/100:n):null}
 const showNum=n=>n.toLocaleString("pt-BR",{maximumFractionDigits:4});
+const FMTS=[["","Geral"],["brl","R$ 0,00"],["n2","0,00"],["n0","0"],["pct0","0%"],["pct1","0,0%"],["pct2","0,00%"]];
+function fmtNum(n,f){const o=d=>({minimumFractionDigits:d,maximumFractionDigits:d});
+ switch(f){case"brl":return"R$ "+n.toLocaleString("pt-BR",o(2));case"n2":return n.toLocaleString("pt-BR",o(2));case"n0":return n.toLocaleString("pt-BR",o(0));
+  case"pct0":return(n*100).toLocaleString("pt-BR",o(0))+"%";case"pct1":return(n*100).toLocaleString("pt-BR",o(1))+"%";case"pct2":return(n*100).toLocaleString("pt-BR",o(2))+"%";default:return null}}
+const isErr=v=>(typeof v==="number"&&!isFinite(v))||(typeof v==="string"&&/^#(ERRO|DIV|REF|CIRC|VALOR|N\/D)/.test(v));
 
 /* ---------- fórmulas ---------- */
-const FN={SOMA:"SUM",SUM:"SUM","MÉDIA":"AVG",MEDIA:"AVG",AVERAGE:"AVG","MÍNIMO":"MIN",MINIMO:"MIN","MÍN":"MIN",MIN:"MIN","MÁXIMO":"MAX",MAXIMO:"MAX","MÁX":"MAX",MAX:"MAX","CONT.NÚM":"CNT","CONT.NUM":"CNT",COUNT:"CNT","CONT.VALORES":"CNTA",COUNTA:"CNTA",ARRED:"ROUND",ROUND:"ROUND",SE:"IF",IF:"IF",ABS:"ABS"};
-const XL={SUM:"SUM",AVG:"AVERAGE",MIN:"MIN",MAX:"MAX",CNT:"COUNT",CNTA:"COUNTA",ROUND:"ROUND",IF:"IF",ABS:"ABS"};
+const FN={SOMA:"SUM",SUM:"SUM","MÉDIA":"AVG",MEDIA:"AVG",AVERAGE:"AVG","MÍNIMO":"MIN",MINIMO:"MIN","MÍN":"MIN",MIN:"MIN","MÁXIMO":"MAX",MAXIMO:"MAX","MÁX":"MAX",MAX:"MAX","CONT.NÚM":"CNT","CONT.NUM":"CNT",COUNT:"CNT","CONT.VALORES":"CNTA",COUNTA:"CNTA",ARRED:"ROUND",ROUND:"ROUND",SE:"IF",IF:"IF",ABS:"ABS",SEERRO:"IFERR",IFERROR:"IFERR"};
+const XL={SUM:"SUM",AVG:"AVERAGE",MIN:"MIN",MAX:"MAX",CNT:"COUNT",CNTA:"COUNTA",ROUND:"ROUND",IF:"IF",ABS:"ABS",IFERR:"IFERROR"};
+const PT={SUM:"SOMA",AVG:"MÉDIA",MIN:"MÍNIMO",MAX:"MÁXIMO",CNT:"CONT.NÚM",CNTA:"CONT.VALORES",ROUND:"ARRED",IF:"SE",ABS:"ABS",IFERR:"SEERRO"};
+const REF="\\$?([A-Za-z]{1,3})\\$?(\\d+)";
+const RX_X=new RegExp("^(?:'((?:[^']|'')+)'|([A-Za-zÀ-ÿ0-9_.]+))!"+REF+"(?::"+REF+")?");
+const RX_R=new RegExp("^"+REF+"(?::"+REF+")?");
 function tok(f){const out=[];let s=f,m;
  while(s.length){
   if(m=s.match(/^\s+/)){s=s.slice(m[0].length);continue}
   if(m=s.match(/^"((?:[^"]|"")*)"/)){out.push({t:"str",v:m[1].replace(/""/g,'"')});s=s.slice(m[0].length);continue}
+  if(m=s.match(RX_X)){const sn=(m[1]!=null?m[1].replace(/''/g,"'"):m[2]);out.push({t:"x",sn,a:[+m[4]-1,CI(m[3])],b:m[5]?[+m[6]-1,CI(m[5])]:null});s=s.slice(m[0].length);continue}
   if(m=s.match(/^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9.]*)\s*\(/)){const k=FN[m[1].toUpperCase()];if(!k)throw new Error("fn");out.push({t:"fn",v:k});s=s.slice(m[0].length);continue}
-  if(m=s.match(/^\$?([A-Za-z]{1,3})\$?(\d+)(?::\$?([A-Za-z]{1,3})\$?(\d+))?/)){out.push(m[3]?{t:"rng",a:[+m[2]-1,CI(m[1])],b:[+m[4]-1,CI(m[3])]}:{t:"ref",a:[+m[2]-1,CI(m[1])]});s=s.slice(m[0].length);continue}
+  if(m=s.match(RX_R)){out.push(m[3]?{t:"rng",a:[+m[2]-1,CI(m[1])],b:[+m[4]-1,CI(m[3])]}:{t:"ref",a:[+m[2]-1,CI(m[1])]});s=s.slice(m[0].length);continue}
   if(m=s.match(/^\d+(?:[.,]\d+)?/)){out.push({t:"num",v:parseFloat(m[0].replace(",","."))});s=s.slice(m[0].length);continue}
   if(m=s.match(/^(<>|<=|>=|[-+*/^()<>=;,%&])/)){out.push({t:"op",v:m[1]});s=s.slice(m[1].length);continue}
   throw new Error("tok")}
  return out}
 function toJS(f){return tok(f).map(x=>{switch(x.t){case"str":return JSON.stringify(x.v);case"fn":return"F."+x.v+"(";case"ref":return"V("+x.a+")";case"rng":return"R("+x.a+","+x.b+")";case"num":return String(x.v);
+ case"x":return x.b?"XR("+JSON.stringify(x.sn)+","+x.a+","+x.b+")":"XV("+JSON.stringify(x.sn)+","+x.a+")";
  default:return{"<>":"!=","=":"==",";":",","^":"**","%":"/100","&":"+''+"}[x.v]||x.v}}).join(" ")}
-function toXL(f){return tok(f).map(x=>{switch(x.t){case"str":return'"'+x.v.replace(/"/g,'""')+'"';case"fn":return XL[x.v]+"(";case"ref":return L(x.a[1])+(x.a[0]+1);case"rng":return L(x.a[1])+(x.a[0]+1)+":"+L(x.b[1])+(x.b[0]+1);case"num":return String(x.v);default:return x.v===";"?",":x.v}}).join("")}
+const cref=a=>L(a[1])+(a[0]+1);
+function toXL(f){const tk=tok(f);if(tk.some(x=>x.t==="x"))return null;return tk.map(x=>{switch(x.t){case"str":return'"'+x.v.replace(/"/g,'""')+'"';case"fn":return XL[x.v]+"(";case"ref":return cref(x.a);case"rng":return cref(x.a)+":"+cref(x.b);case"num":return String(x.v);default:return x.v===";"?",":x.v}}).join("")}
 const flat=a=>a.flat(Infinity);
 const nums=a=>flat(a).filter(v=>typeof v==="number");
 const F={SUM:(...a)=>nums(a).reduce((s,v)=>s+v,0),AVG:(...a)=>{const n=nums(a);return n.length?n.reduce((s,v)=>s+v,0)/n.length:NaN},MIN:(...a)=>{const n=nums(a);return n.length?Math.min(...n):0},MAX:(...a)=>{const n=nums(a);return n.length?Math.max(...n):0},
- CNT:(...a)=>nums(a).length,CNTA:(...a)=>flat(a).filter(v=>v!==""&&v!=null).length,ROUND:(x,d)=>{const k=Math.pow(10,d||0);return Math.round(x*k)/k},IF:(c,a,b)=>c?a:(b===undefined?false:b),ABS:x=>Math.abs(x)};
+ CNT:(...a)=>nums(a).length,CNTA:(...a)=>flat(a).filter(v=>v!==""&&v!=null).length,ROUND:(x,d)=>{const k=Math.pow(10,d||0);return Math.round(x*k)/k},IF:(c,a,b)=>c?a:(b===undefined?false:b),ABS:x=>Math.abs(x),
+ IFERR:(v,alt)=>(isErr(v)||(typeof v==="number"&&isNaN(v)))?alt:v};
 const CACHE=new Map();
-function compile(f){if(CACHE.has(f))return CACHE.get(f);const fn=new Function("V","R","F","return ("+toJS(f)+");");CACHE.set(f,fn);return fn}
-function evalAll(S0){const memo=new Map(),stack=new Set(),g=(S0||SH).cells;
+function compile(f){if(CACHE.has(f))return CACHE.get(f);const fn=new Function("V","R","F","XV","XR","return ("+toJS(f)+");");CACHE.set(f,fn);return fn}
+/* acha outra planilha do mesmo projeto pelo nome (aceita "Arquivo – NOME" vindo de importação) */
+function findSheet(from,name){const n=String(name).trim().toUpperCase(),pool=H().filter(s=>(s.projectId||null)===(from.projectId||null)&&s.id!==from.id);
+ const pick=pool.find(s=>String(s.name||"").trim().toUpperCase()===n)||pool.find(s=>String(s.name||"").trim().toUpperCase().endsWith(" – "+n));
+ if(!pick)return null;return SH&&SH.id===pick.id?SH:pick}
+function evalAll(S0,ctx){const S=S0||SH;ctx=ctx||{stack:new Set(),ev:new Map()};if(ctx.ev.has(S.id))return ctx.ev.get(S.id);
+ const memo=new Map(),g=S.cells||[];
  const raw=(r,c)=>(g[r]&&g[r][c]!=null)?String(g[r][c]):"";
- const val=(r,c)=>{const k=r+","+c;if(memo.has(k))return memo.get(k);const s=raw(r,c);let v;
-  if(s.startsWith("=")){if(stack.has(k))return"#CIRC!";stack.add(k);
-   try{v=compile(s.slice(1))(V,R,F);if(typeof v==="number"&&!isFinite(v))v="#DIV/0!";else if(typeof v==="number"&&isNaN(v))v="#ERRO!";else if(typeof v==="boolean")v=v?"VERDADEIRO":"FALSO";else if(v==null)v=""}catch(e){v="#ERRO!"}
-   stack.delete(k)}else{const n=num(s);v=n==null?s:n}
+ const val=(r,c)=>{const k=S.id+":"+r+","+c;if(memo.has(k))return memo.get(k);const s=raw(r,c);let v;
+  if(s.startsWith("=")){if(ctx.stack.has(k))return"#CIRC!";ctx.stack.add(k);
+   try{v=compile(s.slice(1))(V,R,F,XV,XR);if(typeof v==="number"&&!isFinite(v))v="#DIV/0!";else if(typeof v==="number"&&isNaN(v))v="#ERRO!";else if(typeof v==="boolean")v=v?"VERDADEIRO":"FALSO";else if(v==null)v=""}catch(e){v="#ERRO!"}
+   ctx.stack.delete(k)}else{const n=num(s);v=n==null?s:n}
   memo.set(k,v);return v};
  function V(r,c){const v=val(r,c);return v===""?0:v}
  function R(r1,c1,r2,c2){const o=[];for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)o.push(val(r,c));return o}
- return val}
+ function XV(n,r,c){const o=findSheet(S,n);if(!o)return"#REF!";const v=evalAll(o,ctx)(r,c);return v===""?0:v}
+ function XR(n,r1,c1,r2,c2){const o=findSheet(S,n);if(!o)return["#REF!"];const f=evalAll(o,ctx),out=[];for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)for(let c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)out.push(f(r,c));return out}
+ ctx.ev.set(S.id,val);return val}
+/* texto que aparece na célula */
+function display(S,val,r,c){const raw=String((S.cells[r]&&S.cells[r][c])!=null?S.cells[r][c]:"");if(!raw)return{t:"",n:false,e:false};const v=val(r,c),st=(S.st||{})[K(r,c)]||{};
+ if(typeof v==="number"){const f=fmtNum(v,st.fmt);return{t:f!=null?f:(raw.startsWith("=")?showNum(v):raw),n:true,e:false}}
+ return{t:String(v),n:false,e:raw.startsWith("=")&&isErr(v)}}
 
 /* ---------- usado pelo relatório ---------- */
 window.sheetColName=L;
 window.sheetsOfProject=pid=>H().filter(s=>s.projectId===pid).sort((a,b)=>String(a.created||"").localeCompare(String(b.created||"")));
 window.sheetGrid=function(s){const val=evalAll(s),g=s.cells||[];let lr=-1,lc=-1;g.forEach((row,r)=>row.forEach((v,c)=>{if(String(v==null?"":v).trim()){lr=Math.max(lr,r);lc=Math.max(lc,c)}}));
- const out=[];for(let r=0;r<=lr;r++){const row=[];for(let c=0;c<=lc;c++){const raw=String((g[r]&&g[r][c])!=null?g[r][c]:"");if(!raw){row.push("");continue}const v=val(r,c);row.push(typeof v==="number"?(raw.startsWith("=")?showNum(v):raw):String(v))}out.push(row)}return out};
+ Object.keys(s.img||{}).forEach(k=>{const[r,c]=k.split(",").map(Number);lr=Math.max(lr,r);lc=Math.max(lc,c)});
+ const out=[];for(let r=0;r<=lr;r++){const row=[];for(let c=0;c<=lc;c++){const im=(s.img||{})[K(r,c)];row.push(im?"[imagem]":display(s,val,r,c).t)}out.push(row)}return out};
+window.sheetImages=s=>Object.values(s.img||{});
+
 /* ---------- dados ---------- */
 function blank(r,c){return Array.from({length:r},()=>Array(c).fill(""))}
 function dims(s){return{r:(s.cells||[]).length,c:Math.max(0,...(s.cells||[]).map(x=>x.length))}}
@@ -1593,104 +1639,196 @@ async function flush(){clearTimeout(timer);timer=null;const s=SH;if(!s)return tr
   status("Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));return true}
  catch(e){console.error("Erro ao salvar planilha:",e);status("Erro ao salvar",true);alert("Não foi possível salvar a planilha: "+(e.message||JSON.stringify(e)));return false}
  finally{saving=false;if(again){again=false;flush()}}}
+function logEvent(pid,title,detail){if(!pid||typeof addEvent!=="function")return;const p=projects.find(x=>x.id===pid);if(!p)return;addEvent(p,title,detail);save(p).catch(()=>{})}
 
-/* ---------- Início: seção Planilhas ---------- */
+/* ---------- modelos (Template PD: Matriz competitiva e Modelo Fin P&L) ---------- */
+const Y="#ffff00",AZ="#ddebf7",CZ="#737a7f";
+function tplMatriz(prodName){const R=19,C=14,cells=blank(R,C),st={},S=(a,o)=>{const m=a.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);const r1=+m[2]-1,c1=CI(m[1]),r2=m[3]?+m[4]-1:r1,c2=m[3]?CI(m[3]):c1;for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)st[K(r,c)]={...(st[K(r,c)]||{}),...o}},P=(a,v)=>{cells[+a.match(/\d+/)[0]-1][CI(a.match(/^[A-Z]+/)[0])]=v};
+ P("A2","MATRIZ COMPETITIVA");S("A2",{b:1,al:"c",sz:14,bx:1});
+ S("A3:F6",{bx:1});["B","C","D","E","F"].forEach(c=>S(c+"3",{img:1}));
+ P("G6","PRECIFICAÇÃO");S("G6",{b:1,al:"c",sz:14,bx:1});
+ P("L5","CONVERSOR DE PREÇO");S("L5",{b:1,al:"c",sz:14,bx:1});
+ P("L6","60%");P("M6","30%");S("L6:M6",{bg:Y,al:"c",fmt:"pct0",bx:1});S("N6",{bx:1});
+ P("A7","PRODUTO");S("A7",{b:1,al:"c",bx:1});["B","C","D","E","F"].forEach((c,i)=>{P(c+"7","PLAYER "+(i+1));S(c+"7",{b:1,al:"c",bg:Y,bx:1})});
+ P("G7","PREÇO MÉDIO");P("H7","MENOR PREÇO");P("I7","MAIOR PREÇO");P("J7","POSIC HITECH");S("G7:J7",{b:1,al:"c",wrap:1,bx:1});S("J7",{bg:AZ});
+ P("L7","VAREJO");P("M7","DISTRIBUIDOR");P("N7","FÁBRICA");S("L7:N7",{b:1,al:"c",bx:1});
+ for(let r=8;r<=14;r++){S("A"+r,{b:1,bx:1});S("B"+r+":J"+r,{al:"c",fmt:"brl",bx:1});S("L"+r+":N"+r,{al:"c",fmt:"brl",bx:1});S("J"+r,{bg:AZ});S("N"+r,{bg:AZ});
+  P("G"+r,`=SEERRO(MÉDIA(B${r}:F${r});"0,00")`);P("H"+r,`=SEERRO(MÍNIMO(B${r}:F${r});" ")`);P("I"+r,`=SEERRO(MÁXIMO(B${r}:F${r});" ")`);
+  P("L"+r,`=SEERRO(J${r}/(1+$L$6);" ")`);P("M"+r,`=SEERRO(L${r}/(1+$M$6);" ")`);P("N"+r,`=M${r}`)}
+ S("B8:F8",{bg:Y});if(prodName)P("A8",String(prodName).toUpperCase());
+ P("A16","INSERIR AS RESPECTIVAS MARCAS NA LINHA 7 (PLAYERS)");
+ P("A17","INSERIR IMAGENS DOS PRODUTOS IDENTIFICADOS NOS ESPAÇOS MESCLADOS DAS LINHAS 3,4,5, e 6");
+ P("A18","LANÇAR VALORES EM REAIS DO PREÇO PRATICADO AO CONSUMIDOR EM LOJAS FÍSICAS DE REFERÊNCIA, ADEQUANDO A PROPORCIONALIDADE DE PREÇO CONFORME O VOLUME EM LITROS, GRAMAS, KGS, ETC.");
+ P("A19","DEFINIR O POSICIONAMENTO DA HITECH NO REFERIDO MERCADO E TRANSPORTAR PARA O MODELO FINANCEIRO P&L");
+ S("A16:A19",{sz:12});S("A18",{wrap:1});
+ return{cells,st,merges:[[1,0,1,5],[2,0,5,0],[2,1,5,1],[2,2,5,2],[2,3,5,3],[2,4,5,4],[2,5,5,5],[5,6,5,9],[4,11,4,13],[15,0,15,9],[16,0,16,9],[17,0,17,9],[18,0,18,9]],
+  widths:{0:214,1:98,2:98,3:98,4:98,5:98,6:78,7:78,8:78,9:78,10:30,11:94,12:94,13:94},heights:{2:30,3:30,4:30,5:42,6:42,17:40},header:false,img:{}}}
+function tplPL(matrizName){const R=17,C=4,cells=blank(R,C),st={},P=(a,v)=>{cells[+a.match(/\d+/)[0]-1][CI(a.match(/^[A-Z]+/)[0])]=v},S=(a,o)=>{const r=+a.match(/\d+/)[0]-1,c=CI(a.match(/^[A-Z]+/)[0]);st[K(r,c)]={...(st[K(r,c)]||{}),...o}};
+ const ref=matrizName?`='${String(matrizName).replace(/'/g,"''")}'!N8`:"";
+ P("B1","P&L PRODUTO");S("B1",{b:1,al:"c",sz:16,bx:1});
+ const L1=[[2,"Receita Bruta",1,ref],[3,"(-) Impostos(IPI)",0,"=C2*A3"],[4,"Receita de Vendas",1,"=C2-C3"],[5,"(-) Impostos(ICMS)",0,"=C4*A5"],[6,"(-) PIS/COFINS)",0,"=(C4-C5)*A6"],[7,"(=) Receita Líquida",1,"=C2-C3-C5-C6"],[8,"(-) CPV/COGS",0,""],[9,"(=) Margem de Contribuição",1,"=C7-C8"],[10,"(-) Despesas fixas",0,"=C2*A10"],[11,"(=) Lucro Bruto",1,"=C9-C10"],[12,"(-) Despesas Variáveis",0,"=C2*A10"],[13,"(=) Lucro Operacional - EBIT",1,"=C11-C10"],[14,"(-) Provisões DD e Perdas",0,""],[15,"(=) Lucro Líquido",1,""],[16,"Lucros e Dividendos",0,""],[17,"(=) Resultado final - EBITDA",1,""]];
+ L1.forEach(([r,t,b,f])=>{P("B"+r,t);S("B"+r,b?{b:1,sz:14,bx:1}:{fg:CZ,bx:1});if(f)P("C"+r,f);S("C"+r,{al:"c",fmt:"n2",bx:1,...(b?{b:1,sz:14}:{})})});
+ S("C2",{bg:Y});S("C8",{bg:Y});
+ [["A5","18%","pct2"],["A6","9,25%","pct2"],["A10","7%","pct2"],["A12","5%","pct2"]].forEach(([a,v,f])=>{P(a,v);S(a,{al:"c",fmt:f})});S("A3",{al:"c",fmt:"pct2"});
+ P("D13","=C13/C4");S("D13",{b:1,sz:14,al:"c",fmt:"pct1",bx:1});
+ return{cells,st,merges:[[0,1,0,2]],widths:{0:62,1:390,2:96,3:96},heights:{0:34},header:false,img:{}}}
+const TPL={blank:{t:"Planilha em branco",d:"Linhas e colunas vazias para montar do seu jeito."},
+ pd:{t:"Matriz competitiva + Modelo Fin P&L",d:"As duas abas do Template PD, já ligadas: a Receita Bruta do P&L vem do preço de fábrica da matriz."},
+ matriz:{t:"Só a Matriz competitiva",d:"Players, preços, precificação (média, menor, maior, posicionamento) e conversor de preço."},
+ pl:{t:"Só o Modelo Fin P&L",d:"P&L do produto com impostos, CPV, margens e EBIT (Receita Bruta digitada à mão)."}};
+function uniqName(pid,base){const names=new Set(H().filter(s=>(s.projectId||null)===(pid||null)).map(s=>String(s.name||"").toUpperCase()));if(!names.has(base.toUpperCase()))return base;let i=2;while(names.has((base+" ("+i+")").toUpperCase()))i++;return base+" ("+i+")"}
+function mk(pid,name,body){return{__kind:"planilha",id:nid(),projectId:pid||null,name,created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||"",...body}}
+
+/* ---------- listas ---------- */
 const cards=list=>`<div class="hmsgrid">${list.map(s=>{const d=dims(s);return `<button class="hmsheet" onclick="sheetOpen('${esc(s.id)}')"><span class="ic">▦</span><div><b>${esc(s.name||"Sem nome")}</b><small>${d.r} linhas × ${d.c} colunas</small><small>Atualizada em ${s.updated?new Date(s.updated).toLocaleDateString("pt-BR"):"—"}${s.updatedBy?" por "+esc(s.updatedBy):""}</small></div></button>`}).join("")}</div>`;
-/* Início: só planilhas antigas, sem projeto (a seção some quando não houver nenhuma) */
 window.sheetsHomeHTML=function(){const list=H().filter(s=>!s.projectId).sort((a,b)=>String(b.updated||"").localeCompare(String(a.updated||"")));if(!list.length)return"";
  return `<div class="hmsec sheets"><h2>Planilhas sem projeto</h2><span>${list.length}</span></div>${cards(list)}`};
-/* aba Planilhas dentro do projeto */
 window.projectSheetsHTML=function(p){const list=sheetsOfProject(p.id);
  return `<div class="panel"><div class="panelhead"><h2>Planilhas do projeto</h2><div class="toolbar"><span class="badge blue">${list.length} planilha(s)</span><button class="btn small" onclick="sheetImport('${esc(p.id)}')">⇧ Importar do Excel</button><button class="btn primary small" onclick="sheetNew('${esc(p.id)}')">＋ Nova planilha</button></div></div><div class="panelbody">
- <div class="notice blue">Monte aqui tabelas e cálculos de apoio do projeto (custos, lista de materiais, comparativos...). As planilhas entram no relatório de auditoria do projeto.</div>
- ${list.length?cards(list):`<div class="empty"><div class="big">▦</div><b>Nenhuma planilha neste projeto</b><p>Crie uma planilha nova ou importe uma do Excel.</p></div>`}</div></div>`};
+ <div class="notice blue">Monte aqui tabelas e cálculos de apoio do projeto. Em <b>＋ Nova planilha</b> há os modelos <b>Matriz competitiva</b> e <b>Modelo Fin P&amp;L</b> do Template PD. As planilhas entram no relatório de auditoria do projeto.</div>
+ ${list.length?cards(list):`<div class="empty"><div class="big">▦</div><b>Nenhuma planilha neste projeto</b><p>Crie uma planilha nova (em branco ou a partir de um modelo) ou importe uma do Excel.</p></div>`}</div></div>`};
 
-window.sheetNew=async function(pid){const name=prompt("Nome da nova planilha:","Nova planilha");if(name===null)return;
- const s={__kind:"planilha",id:nid(),projectId:pid||null,name:name.trim()||"Nova planilha",cells:blank(ROWS0,COLS0),header:true,widths:{},created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||""};
- try{setSync("Criando planilha...");await persist(s);if(pid&&typeof addEvent==="function"){const p=projects.find(x=>x.id===pid);if(p){addEvent(p,"Planilha criada",s.name);try{await save(p)}catch(e){}}}setSync("Sincronizado");sheetOpen(s.id)}catch(e){setSync("Erro ao salvar",true);alert("Não foi possível criar a planilha: "+(e.message||JSON.stringify(e)))}};
+/* ---------- nova planilha (em branco ou modelo) ---------- */
+window.sheetNew=function(pid){const p=pid&&projects.find(x=>x.id===pid);
+ document.getElementById("modalTitle").textContent="Nova planilha";document.getElementById("modalSave").textContent="Criar planilha";
+ document.getElementById("modalBody").innerHTML=`<div class="shtpl">${Object.entries(TPL).map(([k,o],i)=>`<label><input type="radio" name="shTpl" value="${k}" ${i===(pid?1:0)?"checked":""}><span><b>${o.t}</b><small>${o.d}</small></span></label>`).join("")}</div>
+ <div class="field" style="margin-top:14px" id="shNmBox"><label>Nome da planilha</label><input id="shNm" value="Nova planilha"></div>`;
+ const sync=()=>{const v=document.querySelector('input[name="shTpl"]:checked').value;document.getElementById("shNmBox").style.display=v==="blank"?"":"none"};
+ document.querySelectorAll('input[name="shTpl"]').forEach(x=>x.addEventListener("change",sync));sync();
+ document.getElementById("modalSave").onclick=async()=>{const v=document.querySelector('input[name="shTpl"]:checked').value,btn=document.getElementById("modalSave");btn.disabled=true;
+  try{setSync("Criando planilha...");let made=[];
+   if(v==="blank")made.push(mk(pid,(document.getElementById("shNm").value.trim()||"Nova planilha"),{cells:blank(ROWS0,COLS0),header:true,widths:{},st:{},merges:[],heights:{},img:{}}));
+   if(v==="pd"||v==="matriz")made.push(mk(pid,uniqName(pid,"MATRIZ COMPETITIVA"),tplMatriz(p&&p.name)));
+   if(v==="pd"||v==="pl"){const mz=v==="pd"?made[made.length-1].name:null;made.push(mk(pid,uniqName(pid,"MODELO FIN P&L"),tplPL(mz)))}
+   for(const s of made)await persist(s);
+   logEvent(pid,"Planilha criada",made.map(s=>s.name).join(" e "));setSync("Sincronizado");closeModal();sheetOpen(made[0].id)}
+  catch(e){setSync("Erro ao salvar",true);alert("Não foi possível criar a planilha: "+(e.message||JSON.stringify(e)))}finally{btn.disabled=false;btn.textContent="Salvar projeto"}};
+ document.getElementById("modal").classList.add("show")};
 
-let inProj=false;
+/* ---------- abrir / fechar ---------- */
 window.sheetOpen=function(id){const s=H().find(x=>x.id===id);if(!s)return;
  if(s.projectId&&projects.some(p=>p.id===s.projectId)){if(!window.__inProject||currentId!==s.projectId){currentId=s.projectId;currentTab="sheets";renderProject()}
   inProj=true;document.querySelectorAll(".projectnav button").forEach(b=>b.classList.toggle("active",/setTab\('sheets'\)/.test(b.getAttribute("onclick")||"")))}
  else{inProj=false;window.__inProject=false;document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));document.getElementById("crumb").textContent="Planilhas"}
- SH=JSON.parse(JSON.stringify(s));sel={r:0,c:0};window.__inSheet=true;drawEditor();const m=document.querySelector(".main");if(m&&!inProj)m.scrollTop=0};
+ SH=JSON.parse(JSON.stringify(s));["st","widths","heights","img"].forEach(k=>{if(!SH[k]||typeof SH[k]!=="object")SH[k]={}});if(!Array.isArray(SH.merges))SH.merges=[];
+ sel={r:0,c:0};window.__inSheet=true;drawEditor();const m=document.querySelector(".main");if(m&&!inProj)m.scrollTop=0};
 function backOut(){if(inProj&&window.__inProject){setTab("sheets")}else showPage("dashboard")}
-
 window.sheetClose=function(){backOut()};
 window.sheetLeave=function(){if(SH&&timer)flush();SH=null;window.__inSheet=false};
 
 /* ---------- editor ---------- */
-function drawEditor(){const d=dims(SH),box=inProj&&document.getElementById("projectContent")||document.getElementById("view");
+const covered=()=>{const m=new Map();(SH.merges||[]).forEach(([r1,c1,r2,c2])=>{for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)m.set(K(r,c),(r===r1&&c===c1)?{rs:r2-r1+1,cs:c2-c1+1}:"hid")});return m};
+const stOf=(r,c)=>(SH.st||{})[K(r,c)]||{};
+function cellStyle(s){let td="",el="";if(s.bg)td+=`background:${s.bg};`;if(s.b)el+="font-weight:800;";if(s.fg)el+=`color:${s.fg};`;if(s.sz)el+=`font-size:${s.sz}px;`;if(s.al)el+=`text-align:${{l:"left",c:"center",r:"right"}[s.al]};`;return{td,el}}
+function drawEditor(){const d=dims(SH),box=inProj&&document.getElementById("projectContent")||document.getElementById("view"),cov=covered(),W=c=>(SH.widths&&SH.widths[c])||120,Hh=r=>(SH.heights&&SH.heights[r])||28;
  box.innerHTML=`<div class="${inProj?"panel shpanel":""}"><div class="pagehead"><div style="flex:1;min-width:0"><div class="eyebrow">${inProj?"Planilha do projeto":"Planilha"}</div><input class="shname" id="shName" value="${esc(SH.name||"")}" title="Clique para renomear"></div>
  <div class="toolbar"><button class="btn" onclick="sheetClose()">← ${inProj?"Planilhas do projeto":"Início"}</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()">🗑 Excluir</button></div></div>
- <div class="shbar"><button class="btn small" onclick="sheetAdd('r')">＋ Linha</button><button class="btn small" onclick="sheetAdd('c')">＋ Coluna</button><button class="btn small" onclick="sheetDel('r')">− Excluir linha</button><button class="btn small" onclick="sheetDel('c')">− Excluir coluna</button>
- <label class="btn small" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="shHdr" ${SH.header?"checked":""}> 1ª linha como cabeçalho</label><span class="shstatus" id="shStatus">Salvo</span></div>
+ <div class="shbar"><button class="btn small" onclick="sheetAdd('r')">＋ Linha</button><button class="btn small" onclick="sheetAdd('c')">＋ Coluna</button><button class="btn small" onclick="sheetDel('r')">− Linha</button><button class="btn small" onclick="sheetDel('c')">− Coluna</button><span class="sep"></span>
+ <button class="btn small" id="shB" onclick="sheetFmt('b')" title="Negrito"><b>N</b></button>
+ <select id="shBg" onchange="sheetFmt('bg',this.value)" title="Cor de fundo"><option value="">Fundo: nenhum</option><option value="#ffff00">Amarelo</option><option value="#ddebf7">Azul claro</option><option value="#e2efda">Verde claro</option><option value="#fce4d6">Laranja claro</option><option value="#ededed">Cinza</option></select>
+ <select id="shAl" onchange="sheetFmt('al',this.value)" title="Alinhamento"><option value="">Alinhar: auto</option><option value="l">Esquerda</option><option value="c">Centro</option><option value="r">Direita</option></select>
+ <select id="shFm" onchange="sheetFmt('fmt',this.value)" title="Formato do número">${FMTS.map(([v,t])=>`<option value="${v}">${v?t:"Número: geral"}</option>`).join("")}</select>
+ <button class="btn small" id="shBx" onclick="sheetFmt('bx')" title="Borda">▢ Borda</button>
+ <button class="btn small" onclick="sheetImg()" title="Inserir imagem na célula selecionada">🖼 Imagem</button>
+ <span class="shstatus" id="shStatus">Salvo</span></div>
  <div class="shfx"><span class="ref" id="shRef">A1</span><span class="fx">fx</span><input id="shFx" placeholder="Digite um valor ou uma fórmula, ex.: =SOMA(B2:B10)"></div>
- <div class="shwrap"><table class="shgrid${SH.header?" hdr":""}" id="shGrid" style="width:${46+Array.from({length:d.c},(_,c)=>(SH.widths&&SH.widths[c])||120).reduce((a,b)=>a+b,0)}px"><colgroup><col style="width:46px">${Array.from({length:d.c},(_,c)=>`<col style="width:${(SH.widths&&SH.widths[c])||120}px">`).join("")}</colgroup>
+ <div class="shwrap"><table class="shgrid${SH.header?" hdr":""}" id="shGrid" style="width:${46+Array.from({length:d.c},(_,c)=>W(c)).reduce((a,b)=>a+b,0)}px"><colgroup><col style="width:46px">${Array.from({length:d.c},(_,c)=>`<col style="width:${W(c)}px">`).join("")}</colgroup>
  <thead><tr><th class="corner"></th>${Array.from({length:d.c},(_,c)=>`<th data-ch="${c}">${L(c)}</th>`).join("")}</tr></thead>
- <tbody>${SH.cells.map((row,r)=>`<tr><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>`<td><input data-r="${r}" data-c="${c}"></td>`).join("")}</tr>`).join("")}</tbody></table></div>
- <div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=MÁXIMO(D2:D9)</code> · <code>=ARRED(E2/3;2)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita, setas navegam.</div></div>`;
- const grid=document.getElementById("shGrid");
- paint();
- grid.addEventListener("focusin",e=>{if(!SH)return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("num","err");i.dataset.orig=i.value;mark()});
- grid.addEventListener("focusout",e=>{if(!SH)return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;commit(+i.dataset.r,+i.dataset.c,i.value);paint()});
+ <tbody>${SH.cells.map((row,r)=>`<tr style="height:${Hh(r)}px"><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>{const cv=cov.get(K(r,c));if(cv==="hid")return"";const s=stOf(r,c),cs=cellStyle(s),im=SH.img[K(r,c)],span=cv?` rowspan="${cv.rs}" colspan="${cv.cs}"`:"";
+  const inner=im?`<div class="shimg" data-ir="${r}" data-ic="${c}"><img data-path="${esc(im.path||"")}" alt="${esc(im.name||"imagem")}"></div>`:s.img?`<div class="shslot" data-ir="${r}" data-ic="${c}" title="Inserir imagem do produto">📷 Imagem</div>`:(s.wrap||(cv&&cv.rs>1))?`<textarea class="cel" data-r="${r}" data-c="${c}" style="${cs.el}" rows="1"></textarea>`:`<input class="cel" data-r="${r}" data-c="${c}" style="${cs.el}">`;
+  return`<td class="${s.bx?"bx":""}" data-tr="${r}" data-tc="${c}" style="${cs.td}"${span}>${inner}</td>`}).join("")}</tr>`).join("")}</tbody></table></div>
+ <div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=SEERRO(B2/C2;0)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code> · outra planilha do projeto: <code>='MATRIZ COMPETITIVA'!N8</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita.</div></div>`;
+ const grid=document.getElementById("shGrid"),sid=SH.id,ok=()=>SH&&SH.id===sid&&grid.isConnected;
+ paint();loadImgs();
+ grid.addEventListener("focusin",e=>{if(!ok())return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("err");i.dataset.orig=i.value;mark()});
+ grid.addEventListener("focusout",e=>{if(!ok())return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;commit(+i.dataset.r,+i.dataset.c,i.value);paint()});
  grid.addEventListener("input",e=>{const i=e.target;if(i.dataset&&i.dataset.r!=null)document.getElementById("shFx").value=i.value});
+ grid.addEventListener("click",e=>{if(!ok())return;const sl=e.target.closest("[data-ir]");if(sl){sel={r:+sl.dataset.ir,c:+sl.dataset.ic};mark();if(sl.classList.contains("shslot"))sheetImg();return}});
  grid.addEventListener("keydown",e=>{const i=e.target;if(!i.dataset||i.dataset.r==null)return;const r=+i.dataset.r,c=+i.dataset.c;
-  if(e.key==="Enter"){e.preventDefault();go(r+(e.shiftKey?-1:1),c)}else if(e.key==="ArrowDown"){e.preventDefault();go(r+1,c)}else if(e.key==="ArrowUp"){e.preventDefault();go(r-1,c)}
+  if(e.key==="Enter"&&!(i.tagName==="TEXTAREA"&&e.altKey)){e.preventDefault();go(r+(e.shiftKey?-1:1),c)}else if(e.key==="ArrowDown"&&i.tagName!=="TEXTAREA"){e.preventDefault();go(r+1,c)}else if(e.key==="ArrowUp"&&i.tagName!=="TEXTAREA"){e.preventDefault();go(r-1,c)}
   else if(e.key==="Escape"){i.value=i.dataset.orig||"";i.blur()}});
  const fx=document.getElementById("shFx");
- fx.addEventListener("input",()=>{const i=cellInput(sel.r,sel.c);if(i&&document.activeElement!==i)i.value=fx.value});
+ fx.addEventListener("input",()=>{const i=cellEl(sel.r,sel.c);if(i&&document.activeElement!==i)i.value=fx.value});
  fx.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();commit(sel.r,sel.c,fx.value);paint();go(sel.r+1,sel.c)}else if(e.key==="Escape"){fx.value=rawAt(sel.r,sel.c)}});
  fx.addEventListener("change",()=>{commit(sel.r,sel.c,fx.value);paint()});
  document.getElementById("shName").addEventListener("change",e=>{SH.name=e.target.value.trim()||"Sem nome";e.target.value=SH.name;dirty()});
- document.getElementById("shHdr").addEventListener("change",e=>{SH.header=e.target.checked;grid.classList.toggle("hdr",SH.header);dirty()});
  mark()}
 const rawAt=(r,c)=>(SH.cells[r]&&SH.cells[r][c]!=null)?String(SH.cells[r][c]):"";
-const cellInput=(r,c)=>document.querySelector(`#shGrid input[data-r="${r}"][data-c="${c}"]`);
-function commit(r,c,v){if(!SH||!SH.cells[r])return;if(rawAt(r,c)===v)return;SH.cells[r][c]=v;dirty()}
-function go(r,c){const d=dims(SH);r=Math.max(0,Math.min(d.r-1,r));const i=cellInput(r,c);if(i){i.focus();i.select&&i.select()}}
-function mark(){if(!SH)return;document.querySelectorAll("#shGrid th.on").forEach(t=>t.classList.remove("on"));const a=document.querySelector(`#shGrid th[data-ch="${sel.c}"]`),b=document.querySelector(`#shGrid th[data-rh="${sel.r}"]`);if(a)a.classList.add("on");if(b)b.classList.add("on");
- const ref=document.getElementById("shRef"),fx=document.getElementById("shFx");if(ref)ref.textContent=L(sel.c)+(sel.r+1);if(fx&&document.activeElement!==fx)fx.value=rawAt(sel.r,sel.c)}
-function paint(){if(!SH)return;const val=evalAll(),act=document.activeElement;document.querySelectorAll("#shGrid td input").forEach(i=>{if(i===act)return;const r=+i.dataset.r,c=+i.dataset.c,raw=rawAt(r,c);
- if(!raw){i.value="";i.className="";return}const v=val(r,c);
- if(typeof v==="number"){i.value=raw.startsWith("=")?showNum(v):raw;i.className="num"}else{i.value=String(v);i.className=/^#(ERRO|DIV|CIRC)/.test(String(v))&&raw.startsWith("=")?"err":""}
- i.title=raw.startsWith("=")?raw:""})}
+const cellEl=(r,c)=>document.querySelector(`#shGrid .cel[data-r="${r}"][data-c="${c}"]`);
+function commit(r,c,v){if(!SH||!SH.cells[r])return;const f=stOf(r,c).fmt||"";if(/^pct/.test(f)&&/^-?\d+([.,]\d+)?$/.test(v.trim()))v=v.trim()+"%";if(rawAt(r,c)===v)return;SH.cells[r][c]=v;dirty()}
+function go(r,c){const d=dims(SH);r=Math.max(0,Math.min(d.r-1,r));let i=cellEl(r,c);if(!i){for(const [r1,c1,r2,c2] of SH.merges)if(r>=r1&&r<=r2&&c>=c1&&c<=c2){i=cellEl(r1,c1);if(!i&&r2+1<d.r)i=cellEl(r2+1,c)}}if(i){i.focus();i.select&&i.select()}}
+function mark(){if(!SH)return;document.querySelectorAll("#shGrid th.on,#shGrid td.sel").forEach(t=>t.classList.remove("on","sel"));const a=document.querySelector(`#shGrid th[data-ch="${sel.c}"]`),b=document.querySelector(`#shGrid th[data-rh="${sel.r}"]`),td=document.querySelector(`#shGrid td[data-tr="${sel.r}"][data-tc="${sel.c}"]`);if(a)a.classList.add("on");if(b)b.classList.add("on");if(td&&!cellEl(sel.r,sel.c))td.classList.add("sel");
+ const ref=document.getElementById("shRef"),fx=document.getElementById("shFx");if(ref)ref.textContent=L(sel.c)+(sel.r+1);if(fx&&document.activeElement!==fx)fx.value=rawAt(sel.r,sel.c);
+ const s=stOf(sel.r,sel.c),q=id=>document.getElementById(id);if(q("shB"))q("shB").classList.toggle("on",!!s.b);if(q("shBx"))q("shBx").classList.toggle("on",!!s.bx);if(q("shBg"))q("shBg").value=s.bg||"";if(q("shAl"))q("shAl").value=s.al||"";if(q("shFm"))q("shFm").value=s.fmt||""}
+function paint(){if(!SH)return;const val=evalAll(),act=document.activeElement;document.querySelectorAll("#shGrid .cel").forEach(i=>{if(i===act)return;const r=+i.dataset.r,c=+i.dataset.c,raw=rawAt(r,c),s=stOf(r,c);
+ const dp=display(SH,val,r,c);i.value=dp.t;i.classList.toggle("err",dp.e);if(!s.al)i.style.textAlign=dp.n?"right":"";i.title=raw.startsWith("=")?raw:""})}
+/* imagens */
+const URLS=new Map();
+async function loadImgs(){for(const im of document.querySelectorAll("#shGrid img[data-path]")){const p=im.dataset.path;if(!p)continue;let u=URLS.get(p);
+ if(!u||u.exp<Date.now()){try{const {data,error}=await supabaseClient.storage.from(STORAGE_BUCKET).createSignedUrl(p,3600);if(error)throw error;u={url:data.signedUrl,exp:Date.now()+3e6};URLS.set(p,u)}catch(e){im.alt="imagem indisponível";continue}}
+ im.src=u.url}}
+window.sheetImg=function(){if(!SH)return;const k=K(sel.r,sel.c),has=SH.img[k];
+ if(has){if(confirm("Esta célula já tem uma imagem.\n\nOK = trocar a imagem · Cancelar = manter")){}else{if(confirm("Remover a imagem desta célula?")){delete SH.img[k];drawEditor();dirty()}return}}
+ const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
+ inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{status("Enviando imagem…");const out=await filesFrom({files:[f]},"Planilha "+SH.name,SH.projectId||"planilhas");SH.img[k]=out[0];drawEditor();dirty()}catch(e){status("Erro ao enviar imagem",true);alert("Não foi possível enviar a imagem: "+(e.message||JSON.stringify(e)))}};
+ inp.click()};
+/* formatação da célula selecionada */
+window.sheetFmt=function(kind,v){if(!SH)return;const k=K(sel.r,sel.c),s={...(SH.st[k]||{})};
+ if(kind==="b")s.b=s.b?0:1;else if(kind==="bx")s.bx=s.bx?0:1;else s[kind]=v||"";Object.keys(s).forEach(x=>{if(!s[x])delete s[x]});
+ if(Object.keys(s).length)SH.st[k]=s;else delete SH.st[k];drawEditor();dirty();const i=cellEl(sel.r,sel.c);if(i)i.focus()};
+/* linhas e colunas: desloca formatação, imagens, mesclagens e alturas */
+function shiftMaps(kind,idx,del){const mv=(obj)=>{const o={};Object.entries(obj||{}).forEach(([k,v])=>{let[r,c]=k.split(",").map(Number);const x=kind==="r"?r:c;if(x===idx)return;if(x>idx){if(kind==="r")r--;else c--}o[K(r,c)]=v});return o};
+ SH.st=mv(SH.st);SH.img=mv(SH.img);
+ SH.merges=SH.merges.filter(m=>kind==="r"?!(idx>=m[0]&&idx<=m[2]):!(idx>=m[1]&&idx<=m[3])).map(m=>kind==="r"?[m[0]>idx?m[0]-1:m[0],m[1],m[2]>idx?m[2]-1:m[2],m[3]]:[m[0],m[1]>idx?m[1]-1:m[1],m[2],m[3]>idx?m[3]-1:m[3]]);
+ const sh=(obj)=>{const o={};Object.entries(obj||{}).forEach(([k,v])=>{k=+k;if(k===idx)return;o[k>idx?k-1:k]=v});return o};if(kind==="r")SH.heights=sh(SH.heights);else SH.widths=sh(SH.widths)}
 window.sheetAdd=function(k){const d=dims(SH);if(k==="r"){if(d.r>=MAXR)return alert("Limite de "+MAXR+" linhas.");SH.cells.push(Array(d.c).fill(""))}else{if(d.c>=MAXC)return alert("Limite de "+MAXC+" colunas.");SH.cells.forEach(r=>r.push(""))}drawEditor();dirty()};
-window.sheetDel=function(k){const d=dims(SH);if(k==="r"){if(d.r<=1)return;const has=SH.cells[sel.r].some(v=>String(v||"").trim());if(has&&!confirm("Excluir a linha "+(sel.r+1)+" com o conteúdo dela?"))return;SH.cells.splice(sel.r,1);sel.r=Math.min(sel.r,SH.cells.length-1)}
- else{if(d.c<=1)return;const has=SH.cells.some(r=>String(r[sel.c]||"").trim());if(has&&!confirm("Excluir a coluna "+L(sel.c)+" com o conteúdo dela?"))return;SH.cells.forEach(r=>r.splice(sel.c,1));sel.c=Math.min(sel.c,dims(SH).c-1)}
+window.sheetDel=function(k){const d=dims(SH);if(k==="r"){if(d.r<=1)return;const has=SH.cells[sel.r].some(v=>String(v||"").trim());if(!confirm("Excluir a linha "+(sel.r+1)+(has?" com o conteúdo dela":"")+"?\n\nAtenção: as fórmulas não se ajustam sozinhas."))return;SH.cells.splice(sel.r,1);shiftMaps("r",sel.r);sel.r=Math.min(sel.r,SH.cells.length-1)}
+ else{if(d.c<=1)return;const has=SH.cells.some(r=>String(r[sel.c]||"").trim());if(!confirm("Excluir a coluna "+L(sel.c)+(has?" com o conteúdo dela":"")+"?\n\nAtenção: as fórmulas não se ajustam sozinhas."))return;SH.cells.forEach(r=>r.splice(sel.c,1));shiftMaps("c",sel.c);sel.c=Math.min(sel.c,dims(SH).c-1)}
  drawEditor();dirty()};
 window.sheetDelete=async function(){if(!SH)return;if(!confirm(`Excluir a planilha "${SH.name}" para todos os usuários?\n\nEsta ação não pode ser desfeita.`))return;clearTimeout(timer);
  try{const {data,error}=await supabaseClient.from("projects").delete().eq("id",SH.id).select("id");if(error)throw error;
   if(!data||!data.length){alert("O banco de dados não autorizou a exclusão (falta permissão de exclusão para o seu usuário).");return}
-  window.HSHEETS=H().filter(x=>x.id!==SH.id);if(SH.projectId&&typeof addEvent==="function"){const p=projects.find(x=>x.id===SH.projectId);if(p){addEvent(p,"Planilha excluída",SH.name);try{await save(p)}catch(e){}}}backOut()}catch(e){alert("Não foi possível excluir: "+(e.message||JSON.stringify(e)))}};
+  window.HSHEETS=H().filter(x=>x.id!==SH.id);logEvent(SH.projectId,"Planilha excluída",SH.name);backOut()}catch(e){alert("Não foi possível excluir: "+(e.message||JSON.stringify(e)))}};
 
 /* ---------- Excel: baixar ---------- */
+const XZ={brl:'"R$" #,##0.00',n2:"#,##0.00",n0:"0",pct0:"0%",pct1:"0.0%",pct2:"0.00%"};
 window.sheetExport=async function(){if(!SH)return;try{if(timer)await flush();status("Gerando Excel…");await xlsxLib();
  const val=evalAll(),d=dims(SH),ws={};
- for(let r=0;r<d.r;r++)for(let c=0;c<d.c;c++){const raw=rawAt(r,c);if(!raw)continue;const a=XLSX.utils.encode_cell({r,c});
+ for(let r=0;r<d.r;r++)for(let c=0;c<d.c;c++){const raw=rawAt(r,c);if(!raw)continue;const a=XLSX.utils.encode_cell({r,c}),st=stOf(r,c);
   if(raw.startsWith("=")){const v=val(r,c);let f=null;try{f=toXL(raw.slice(1))}catch(e){}ws[a]=typeof v==="number"?{t:"n",v}:{t:"s",v:String(v)};if(f)ws[a].f=f}
-  else{const n=num(raw);ws[a]=n==null?{t:"s",v:raw}:{t:"n",v:n}}}
+  else{const n=num(raw);ws[a]=n==null?{t:"s",v:raw}:{t:"n",v:n}}
+  if(st.fmt&&ws[a].t==="n")ws[a].z=XZ[st.fmt]}
  ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(0,d.r-1),c:Math.max(0,d.c-1)}});
  ws["!cols"]=Array.from({length:d.c},(_,c)=>({wpx:(SH.widths&&SH.widths[c])||120}));
+ ws["!rows"]=Array.from({length:d.r},(_,r)=>SH.heights&&SH.heights[r]?{hpx:SH.heights[r]}:{});
+ if(SH.merges.length)ws["!merges"]=SH.merges.map(([r1,c1,r2,c2])=>({s:{r:r1,c:c1},e:{r:r2,c:c2}}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,String(SH.name||"Planilha").replace(/[\\\/\?\*\[\]:]/g," ").slice(0,31)||"Planilha");
- XLSX.writeFile(wb,String(SH.name||"Planilha").replace(/[^\wÀ-ÿ -]+/g,"_").trim()+".xlsx");status("Excel baixado")}catch(e){status("Erro ao gerar Excel",true);alert(e.message||String(e))}};
+ XLSX.writeFile(wb,String(SH.name||"Planilha").replace(/[^\wÀ-ÿ &-]+/g,"_").trim()+".xlsx");status("Excel baixado (sem cores e imagens)")}catch(e){status("Erro ao gerar Excel",true);alert(e.message||String(e))}};
 
 /* ---------- Excel: importar (cada aba vira uma planilha) ---------- */
+const zToFmt=z=>{z=String(z||"");if(!z||z==="General")return"";if(/%/.test(z)){const m=z.match(/0[.,](0+)%/);return m?(m[1].length>=2?"pct2":"pct1"):"pct0"}if(/R\$/.test(z))return"brl";if(/0[.,]00/.test(z))return"n2";return""};
 window.sheetImport=function(pid){const inp=document.createElement("input");inp.type="file";inp.accept=".xlsx,.xls,.xlsm,.csv,.ods";
  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{setSync("Importando planilha...");await xlsxLib();
-  const wb=XLSX.read(await f.arrayBuffer(),{cellFormula:true,cellNF:true});const base=f.name.replace(/\.[^.]+$/,"");let made=[],cut=false;
+  const wb=XLSX.read(await f.arrayBuffer(),{cellFormula:true,cellNF:true,cellStyles:true});const base=f.name.replace(/\.[^.]+$/,"");let made=[],cut=false;
   for(const sn of wb.SheetNames){const ws=wb.Sheets[sn];if(!ws||!ws["!ref"])continue;const rg=XLSX.utils.decode_range(ws["!ref"]);
-   const nr=Math.min(rg.e.r+1,MAXR),nc=Math.min(rg.e.c+1,MAXC);if(rg.e.r+1>MAXR||rg.e.c+1>MAXC)cut=true;const cells=blank(Math.max(nr,1),Math.max(nc,1)),widths={};
-   for(let r=0;r<nr;r++)for(let c=0;c<nc;c++){const x=ws[XLSX.utils.encode_cell({r,c})];if(!x)continue;let v="";
+   let lr=0,lc=0;Object.keys(ws).forEach(a=>{if(a[0]==="!")return;const x=ws[a];if(x&&(x.v!=null&&x.v!==""||x.f)){const p=XLSX.utils.decode_cell(a);lr=Math.max(lr,p.r);lc=Math.max(lc,p.c)}});
+   (ws["!merges"]||[]).forEach(m=>{lr=Math.max(lr,m.e.r);lc=Math.max(lc,m.e.c)});
+   const nr=Math.min(lr+1,MAXR),nc=Math.min(lc+1,MAXC);if(lr+1>MAXR||lc+1>MAXC)cut=true;const cells=blank(Math.max(nr,1),Math.max(nc,1)),widths={},heights={},st={};
+   for(let r=0;r<nr;r++)for(let c=0;c<nc;c++){const x=ws[XLSX.utils.encode_cell({r,c})];if(!x)continue;let v="";const o={};
     if(x.f){try{compile(x.f);v="="+x.f}catch(e){v=x.w!=null?x.w:(x.v!=null?String(x.v):"")}}
-    else if(x.t==="n"&&x.w!=null&&!/[\/:]/.test(x.w))v=showNum(x.v);else v=x.w!=null?x.w:(x.v!=null?String(x.v):"");cells[r][c]=v}
-   (ws["!cols"]||[]).forEach((w,c)=>{if(w&&c<nc&&w.wpx)widths[c]=Math.max(60,Math.min(400,Math.round(w.wpx)))});
-   const s={__kind:"planilha",id:nid(),projectId:pid||null,name:wb.SheetNames.length>1?base+" – "+sn:base,cells,header:true,widths,created:new Date().toISOString(),createdBy:(currentUser&&currentUser.email)||"",importedFrom:f.name};
-   await persist(s);made.push(s)}
-  setSync("Sincronizado");if(!made.length){alert("O arquivo não tem dados para importar.");return}
-  if(cut)alert("Atenção: a planilha passou do limite de "+MAXR+" linhas ou "+MAXC+" colunas; só essa parte foi importada.");
-  if(pid&&typeof addEvent==="function"){const p=projects.find(x=>x.id===pid);if(p){addEvent(p,"Planilha importada do Excel",f.name);try{await save(p)}catch(e){}}}
+    else if(x.t==="n"){const fm=zToFmt(x.z);if(fm){o.fmt=fm;v=/^pct/.test(fm)?showNum(x.v*100)+"%":showNum(x.v)}else v=(x.w!=null&&/[\/:]/.test(x.w))?x.w:showNum(x.v)}
+    else v=x.w!=null?x.w:(x.v!=null?String(x.v):"");
+    if(x.f){const fm=zToFmt(x.z);if(fm)o.fmt=fm}
+    const fg=x.s&&x.s.patternType==="solid"&&x.s.fgColor&&x.s.fgColor.rgb;if(fg&&!/^F*$/i.test(fg))o.bg="#"+String(fg).slice(-6);
+    cells[r][c]=v;if(Object.keys(o).length)st[K(r,c)]=o}
+   (ws["!cols"]||[]).forEach((w,c)=>{if(w&&c<nc&&w.wpx)widths[c]=Math.max(30,Math.min(420,Math.round(w.wpx)))});
+   (ws["!rows"]||[]).forEach((h,r)=>{if(h&&r<nr&&h.hpx&&h.hpx>28)heights[r]=Math.min(200,Math.round(h.hpx))});
+   const merges=(ws["!merges"]||[]).filter(m=>m.e.r<nr&&m.e.c<nc).map(m=>[m.s.r,m.s.c,m.e.r,m.e.c]);
+   made.push(mk(pid,wb.SheetNames.length>1?base+" – "+sn:base,{cells,header:false,widths,heights,st,merges,img:{},importedFrom:f.name}))}
+  if(!made.length){setSync("Sincronizado");alert("O arquivo não tem dados para importar.");return}
+  for(const s of made)await persist(s);
+  setSync("Sincronizado");if(cut)alert("Atenção: a planilha passou do limite de "+MAXR+" linhas ou "+MAXC+" colunas; só essa parte foi importada.");
+  logEvent(pid,"Planilha importada do Excel",f.name);
   if(made.length===1)sheetOpen(made[0].id);else{alert(made.length+" abas importadas, cada uma como uma planilha.");backOut()}}
   catch(e){setSync("Erro na importação",true);alert("Não foi possível importar: "+(e.message||JSON.stringify(e)))}};
  inp.click()};
