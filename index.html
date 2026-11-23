@@ -1709,7 +1709,11 @@ window.sheetNew=function(pid){const p=pid&&projects.find(x=>x.id===pid);
  <div class="field" style="margin-top:14px" id="shNmBox"><label>Nome da planilha</label><input id="shNm" value="Nova planilha"></div>`;
  const sync=()=>{const v=document.querySelector('input[name="shTpl"]:checked').value;document.getElementById("shNmBox").style.display=v==="blank"?"":"none"};
  document.querySelectorAll('input[name="shTpl"]').forEach(x=>x.addEventListener("change",sync));sync();
- document.getElementById("modalSave").onclick=async()=>{const v=document.querySelector('input[name="shTpl"]:checked').value,btn=document.getElementById("modalSave");btn.disabled=true;
+ document.getElementById("modalSave").onclick=async()=>{const v=document.querySelector('input[name="shTpl"]:checked').value,btn=document.getElementById("modalSave");
+  const ex=H().filter(s=>(s.projectId||null)===(pid||null)),hasM=ex.some(s=>/MATRIZ/i.test(s.name||"")),hasP=ex.some(s=>/^MODELO FIN/i.test(s.name||""));
+  const dup=(v==="pd"&&(hasM||hasP))||(v==="matriz"&&hasM)||(v==="pl"&&hasP);
+  if(dup&&!confirm("Este projeto já tem "+(v==="pl"?"um Modelo Fin P&L":v==="matriz"?"uma Matriz competitiva":"Matriz competitiva / Modelo Fin P&L")+".\nPara ver o P&L, use as abas embaixo da matriz.\n\nCriar outra cópia mesmo assim?"))return;
+  btn.disabled=true;
   try{setSync("Criando planilha...");let made=[];
    if(v==="blank")made.push(mk(pid,(document.getElementById("shNm").value.trim()||"Nova planilha"),{cells:blank(ROWS0,COLS0),header:true,widths:{},st:{},merges:[],heights:{},img:{}}));
    if(v==="pd"||v==="matriz")made.push(mk(pid,uniqName(pid,"MATRIZ COMPETITIVA"),tplMatriz(p&&p.name)));
@@ -1738,7 +1742,7 @@ function cellStyle(s){let td="",el="";if(s.bg)td+=`background:${s.bg};`;if(s.b)e
 function fullHost(){let h=document.getElementById("shFullHost");if(!h){h=document.createElement("div");h.id="shFullHost";document.body.appendChild(h)}return h}
 function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!full)fh.innerHTML="";if(full){const nb=inProj&&document.getElementById("projectContent")||document.getElementById("view");if(nb)nb.innerHTML=`<div class="panel"><div class="panelbody muted">Planilha aberta em tela cheia.</div></div>`}const d=dims(SH),box=full?fullHost():(inProj&&document.getElementById("projectContent")||document.getElementById("view")),cov=covered(),W=c=>(SH.widths&&SH.widths[c])||120,Hh=r=>(SH.heights&&SH.heights[r])||28;
  box.innerHTML=`<div id="shRoot" class="${inProj?"panel shpanel":""}${full?" shfull":""}"><div class="pagehead"><div style="flex:1;min-width:0"><div class="eyebrow">${inProj?"Planilha do projeto":"Planilha"}</div><input class="shname" id="shName" value="${esc(SH.name||"")}" title="Clique para renomear"></div>
- <div class="toolbar"><button class="btn" onclick="sheetFull()" title="Ver a planilha na tela inteira (Esc para sair)">${full?"🗗 Sair da tela cheia":"⛶ Tela cheia"}</button><button class="btn" onclick="sheetClose()">← ${inProj?"Planilhas do projeto":"Início"}</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()">🗑 Excluir</button></div></div>
+ <div class="toolbar"><button class="btn" onclick="sheetFull()" title="Ver a planilha na tela inteira (Esc para sair)">${full?"🗗 Sair da tela cheia":"⛶ Tela cheia"}</button><button class="btn" onclick="sheetClose()">← ${inProj?"Planilhas do projeto":"Início"}</button><button class="btn primary" onclick="sheetExport()">⇩ Baixar em Excel</button><button class="btn danger" onclick="sheetDelete()" title="Exclui só esta planilha (esta aba)">🗑 Excluir esta planilha</button></div></div>
  <div class="shbar"><button class="btn small" onclick="sheetAdd('r')">＋ Linha</button><button class="btn small" onclick="sheetAdd('c')">＋ Coluna</button><button class="btn small" onclick="sheetDel('r')">− Linha</button><button class="btn small" onclick="sheetDel('c')">− Coluna</button><span class="sep"></span>
  <button class="btn small" id="shB" onclick="sheetFmt('b')" title="Negrito"><b>N</b></button>
  <select id="shBg" onchange="sheetFmt('bg',this.value)" title="Cor de fundo"><option value="">Fundo: nenhum</option><option value="#ffff00">Amarelo</option><option value="#ddebf7">Azul claro</option><option value="#e2efda">Verde claro</option><option value="#fce4d6">Laranja claro</option><option value="#ededed">Cinza</option></select>
@@ -1814,10 +1818,11 @@ window.sheetAdd=function(k){const d=dims(SH);if(k==="r"){if(d.r>=MAXR)return ale
 window.sheetDel=function(k){const d=dims(SH);if(k==="r"){if(d.r<=1)return;const has=SH.cells[sel.r].some(v=>String(v||"").trim());if(!confirm("Excluir a linha "+(sel.r+1)+(has?" com o conteúdo dela":"")+"?\n\nAtenção: as fórmulas não se ajustam sozinhas."))return;SH.cells.splice(sel.r,1);shiftMaps("r",sel.r);sel.r=Math.min(sel.r,SH.cells.length-1)}
  else{if(d.c<=1)return;const has=SH.cells.some(r=>String(r[sel.c]||"").trim());if(!confirm("Excluir a coluna "+L(sel.c)+(has?" com o conteúdo dela":"")+"?\n\nAtenção: as fórmulas não se ajustam sozinhas."))return;SH.cells.forEach(r=>r.splice(sel.c,1));shiftMaps("c",sel.c);sel.c=Math.min(sel.c,dims(SH).c-1)}
  drawEditor();dirty()};
-window.sheetDelete=async function(){if(!SH)return;if(!confirm(`Excluir a planilha "${SH.name}" para todos os usuários?\n\nEsta ação não pode ser desfeita.`))return;clearTimeout(timer);
+window.sheetDelete=async function(){if(!SH)return;const others=(SH.projectId?sheetsOfProject(SH.projectId):H().filter(s=>!s.projectId)).filter(s=>s.id!==SH.id).map(s=>"• "+s.name);
+ if(!confirm(`Excluir SOMENTE a planilha "${SH.name}" para todos os usuários?${others.length?"\n\nContinuam no projeto:\n"+others.join("\n"):""}\n\nEsta ação não pode ser desfeita.`))return;clearTimeout(timer);
  try{const {data,error}=await supabaseClient.from("projects").delete().eq("id",SH.id).select("id");if(error)throw error;
   if(!data||!data.length){alert("O banco de dados não autorizou a exclusão (falta permissão de exclusão para o seu usuário).");return}
-  window.HSHEETS=H().filter(x=>x.id!==SH.id);logEvent(SH.projectId,"Planilha excluída",SH.name);backOut()}catch(e){alert("Não foi possível excluir: "+(e.message||JSON.stringify(e)))}};
+  const gone=SH.name;window.HSHEETS=H().filter(x=>x.id!==SH.id);logEvent(SH.projectId,"Planilha excluída",gone);backOut();setSync("Planilha \""+gone+"\" excluída")}catch(e){alert("Não foi possível excluir: "+(e.message||JSON.stringify(e)))}};
 
 /* ---------- Excel: baixar ---------- */
 const XZ={brl:'"R$" #,##0.00',n2:"#,##0.00",n0:"0",pct0:"0%",pct1:"0.0%",pct2:"0.00%"};
