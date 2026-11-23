@@ -1522,6 +1522,11 @@ html[data-theme=dark] .shgrid td .cel{color:var(--text)}
 .shgrid td.sel{box-shadow:inset 0 0 0 2px #1f9d55}
 .shgrid td .shimg{position:absolute;inset:3px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .shgrid td .shimg img{max-width:100%;max-height:100%;object-fit:contain}
+.shgrid td .shimgbt{position:absolute;left:0;right:0;bottom:0;display:none;gap:4px;justify-content:center;padding:4px}
+.shgrid td .shimg:hover .shimgbt,.shgrid td.sel .shimgbt{display:flex}
+.shgrid td .shimgbt button{border:0;border-radius:6px;padding:3px 9px;font-size:13px;font-weight:700;cursor:pointer;background:#10243acc;color:#fff}
+.shgrid td .shimgbt button[data-act=del]{background:#c74646e6}
+html[data-theme=dark] .shgrid td.bgc .cel{color:#1d2b3a}
 .shgrid td .shslot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a99a8;font-size:12px;cursor:pointer;background:repeating-linear-gradient(45deg,transparent 0 8px,#f3f6f9 8px 16px)}
 .shgrid td .shslot:hover{color:#1f7a45}
 html[data-theme=dark] .shgrid td .shslot{background:repeating-linear-gradient(45deg,transparent 0 8px,#172235 8px 16px)}
@@ -1737,15 +1742,15 @@ function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!ful
  <div class="shwrap"><table class="shgrid${SH.header?" hdr":""}" id="shGrid" style="zoom:${zoom};width:${46+Array.from({length:d.c},(_,c)=>W(c)).reduce((a,b)=>a+b,0)}px"><colgroup><col style="width:46px">${Array.from({length:d.c},(_,c)=>`<col style="width:${W(c)}px">`).join("")}</colgroup>
  <thead><tr><th class="corner"></th>${Array.from({length:d.c},(_,c)=>`<th data-ch="${c}">${L(c)}</th>`).join("")}</tr></thead>
  <tbody>${SH.cells.map((row,r)=>`<tr style="height:${Hh(r)}px"><th data-rh="${r}">${r+1}</th>${Array.from({length:d.c},(_,c)=>{const cv=cov.get(K(r,c));if(cv==="hid")return"";const s=stOf(r,c),cs=cellStyle(s),im=SH.img[K(r,c)],span=cv?` rowspan="${cv.rs}" colspan="${cv.cs}"`:"";
-  const inner=im?`<div class="shimg" data-ir="${r}" data-ic="${c}"><img data-path="${esc(im.path||"")}" alt="${esc(im.name||"imagem")}"></div>`:s.img?`<div class="shslot" data-ir="${r}" data-ic="${c}" title="Inserir imagem do produto">📷 Imagem</div>`:(s.wrap||(cv&&cv.rs>1))?`<textarea class="cel" data-r="${r}" data-c="${c}" style="${cs.el}" rows="1"></textarea>`:`<input class="cel" data-r="${r}" data-c="${c}" style="${cs.el}">`;
-  return`<td class="${s.bx?"bx":""}" data-tr="${r}" data-tc="${c}" style="${cs.td}"${span}>${inner}</td>`}).join("")}</tr>`).join("")}</tbody></table></div>
+  const inner=im?`<div class="shimg" data-ir="${r}" data-ic="${c}"><img data-path="${esc(im.path||"")}" alt="${esc(im.name||"imagem")}"><div class="shimgbt"><button type="button" data-act="swap" title="Trocar a imagem">↻</button><button type="button" data-act="del" title="Remover a imagem">🗑</button></div></div>`:s.img?`<div class="shslot" data-ir="${r}" data-ic="${c}" title="Inserir imagem do produto">📷 Imagem</div>`:(s.wrap||(cv&&cv.rs>1))?`<textarea class="cel" data-r="${r}" data-c="${c}" style="${cs.el}" rows="1"></textarea>`:`<input class="cel" data-r="${r}" data-c="${c}" style="${cs.el}">`;
+  return`<td class="${s.bx?"bx":""}${s.bg?" bgc":""}" data-tr="${r}" data-tc="${c}" style="${cs.td}"${span}>${inner}</td>`}).join("")}</tr>`).join("")}</tbody></table></div>
  <div class="shhelp">Salva sozinho a cada alteração. Fórmulas começam com <b>=</b>: <code>=SOMA(B2:B10)</code> · <code>=MÉDIA(C2:C5)</code> · <code>=B2*C2</code> · <code>=SEERRO(B2/C2;0)</code> · <code>=SE(F2&gt;100;"Alto";"Baixo")</code> · outra planilha do projeto: <code>='MATRIZ COMPETITIVA'!N8</code>. Separe os argumentos com <b>;</b>. Enter desce, Tab vai para a direita.</div></div>`;
  const grid=document.getElementById("shGrid"),sid=SH.id,ok=()=>SH&&SH.id===sid&&grid.isConnected;
  paint();loadImgs();
  grid.addEventListener("focusin",e=>{if(!ok())return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;sel={r:+i.dataset.r,c:+i.dataset.c};i.value=rawAt(sel.r,sel.c);i.classList.remove("err");i.dataset.orig=i.value;mark()});
  grid.addEventListener("focusout",e=>{if(!ok())return;const i=e.target;if(!i.dataset||i.dataset.r==null)return;commit(+i.dataset.r,+i.dataset.c,i.value);paint()});
  grid.addEventListener("input",e=>{const i=e.target;if(i.dataset&&i.dataset.r!=null)document.getElementById("shFx").value=i.value});
- grid.addEventListener("click",e=>{if(!ok())return;const sl=e.target.closest("[data-ir]");if(sl){sel={r:+sl.dataset.ir,c:+sl.dataset.ic};mark();if(sl.classList.contains("shslot"))sheetImg();return}});
+ grid.addEventListener("click",e=>{if(!ok())return;const sl=e.target.closest("[data-ir]");if(sl){sel={r:+sl.dataset.ir,c:+sl.dataset.ic};mark();const act=e.target.closest("[data-act]");if(act&&act.dataset.act==="del")sheetImgDel();else if(act&&act.dataset.act==="swap")sheetImg();else if(sl.classList.contains("shslot"))sheetImg();return}});
  grid.addEventListener("keydown",e=>{const i=e.target;if(!i.dataset||i.dataset.r==null)return;const r=+i.dataset.r,c=+i.dataset.c;
   if(e.key==="Enter"&&!(i.tagName==="TEXTAREA"&&e.altKey)){e.preventDefault();go(r+(e.shiftKey?-1:1),c)}else if(e.key==="ArrowDown"&&i.tagName!=="TEXTAREA"){e.preventDefault();go(r+1,c)}else if(e.key==="ArrowUp"&&i.tagName!=="TEXTAREA"){e.preventDefault();go(r-1,c)}
   else if(e.key==="Escape"){i.value=i.dataset.orig||"";i.blur()}});
@@ -1775,8 +1780,9 @@ const URLS=new Map();
 async function loadImgs(){for(const im of document.querySelectorAll("#shGrid img[data-path]")){const p=im.dataset.path;if(!p)continue;let u=URLS.get(p);
  if(!u||u.exp<Date.now()){try{const {data,error}=await supabaseClient.storage.from(STORAGE_BUCKET).createSignedUrl(p,3600);if(error)throw error;u={url:data.signedUrl,exp:Date.now()+3e6};URLS.set(p,u)}catch(e){im.alt="imagem indisponível";continue}}
  im.src=u.url}}
-window.sheetImg=function(){if(!SH)return;const k=K(sel.r,sel.c),has=SH.img[k];
- if(has){if(confirm("Esta célula já tem uma imagem.\n\nOK = trocar a imagem · Cancelar = manter")){}else{if(confirm("Remover a imagem desta célula?")){delete SH.img[k];drawEditor();dirty()}return}}
+window.sheetImgDel=function(){if(!SH)return;const k=K(sel.r,sel.c);if(!SH.img[k])return;if(!confirm("Remover a imagem da célula "+L(sel.c)+(sel.r+1)+"?"))return;delete SH.img[k];drawEditor();dirty()};
+document.addEventListener("keydown",e=>{if(!SH||!(e.key==="Delete"||e.key==="Backspace"))return;const a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT"))return;if(SH.img&&SH.img[K(sel.r,sel.c)]){e.preventDefault();sheetImgDel()}});
+window.sheetImg=function(){if(!SH)return;const k=K(sel.r,sel.c);
  const inp=document.createElement("input");inp.type="file";inp.accept="image/*";
  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;try{status("Enviando imagem…");const out=await filesFrom({files:[f]},"Planilha "+SH.name,SH.projectId||"planilhas");SH.img[k]=out[0];drawEditor();dirty()}catch(e){status("Erro ao enviar imagem",true);alert("Não foi possível enviar a imagem: "+(e.message||JSON.stringify(e)))}};
  inp.click()};
