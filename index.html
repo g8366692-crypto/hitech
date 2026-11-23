@@ -1535,6 +1535,7 @@ html[data-theme=dark] .shgrid td .shslot{background:repeating-linear-gradient(45
 .shfull{position:fixed;inset:0;z-index:300;background:var(--bg);padding:16px 22px;overflow:auto;border-radius:0!important;margin:0!important;border:0!important;box-shadow:none!important}.shfull .shwrap{max-height:calc(100vh - 215px)}.shfull .shhelp{display:none}
 .shtabs{display:flex;gap:2px;flex-wrap:wrap;border-top:2px solid #1f9d55;margin-top:0;padding:0 6px}
 .shtabs button{border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;background:var(--bg);color:var(--muted);padding:6px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.shtabs button.add{color:#1f7a45;border-style:dashed}
 .shtabs button.on{background:var(--card);color:#1f7a45;font-weight:800;border-color:#1f9d55;border-top:2px solid var(--card);margin-top:-2px}
 .shpanel{padding:18px 20px}.shpanel .pagehead{margin-bottom:12px}
 .shtpl{display:grid;gap:10px}
@@ -1773,8 +1774,14 @@ function drawEditor(){const fh=document.getElementById("shFullHost");if(fh&&!ful
  fx.addEventListener("change",()=>{commit(sel.r,sel.c,fx.value);paint()});
  document.getElementById("shName").addEventListener("change",e=>{SH.name=e.target.value.trim()||"Sem nome";e.target.value=SH.name;dirty()});
  mark()}
-function tabsHTML(){const list=SH.projectId?sheetsOfProject(SH.projectId):H().filter(s=>!s.projectId);if(list.length<2)return"";
- return`<div class="shtabs">${list.map(s=>`<button type="button" class="${s.id===SH.id?"on":""}" onclick="sheetTab('${esc(s.id)}')">${esc(s.name||"Sem nome")}</button>`).join("")}</div>`}
+function tabsHTML(){const list=SH.projectId?sheetsOfProject(SH.projectId):H().filter(s=>!s.projectId);
+ const hasM=list.some(s=>/MATRIZ/i.test(s.name||"")),hasP=list.some(s=>/^MODELO FIN/i.test(s.name||""));
+ const add=hasM&&!hasP?`<button type="button" class="add" onclick="sheetAddPL()" title="Cria o Modelo Fin P&L já ligado a esta matriz">＋ MODELO FIN P&amp;L</button>`:!hasM&&hasP?`<button type="button" class="add" onclick="sheetAddMatriz()" title="Cria a Matriz competitiva que alimenta o P&L">＋ MATRIZ COMPETITIVA</button>`:"";
+ return`<div class="shtabs">${list.map(s=>`<button type="button" class="${s.id===SH.id?"on":""}" onclick="sheetTab('${esc(s.id)}')">${esc(s.name||"Sem nome")}</button>`).join("")}${add}${SH.projectId?`<button type="button" class="add" onclick="sheetNew('${esc(SH.projectId)}')" title="Nova planilha">＋</button>`:""}</div>`}
+async function quickMake(body,name){const pid=SH.projectId,a=document.activeElement;if(a&&a.blur)a.blur();if(timer)await flush();
+ const s=mk(pid,uniqName(pid,name),body);try{status("Criando "+name+"…");await persist(s);logEvent(pid,"Planilha criada",s.name);sheetOpen(s.id)}catch(e){status("Erro ao criar",true);alert("Não foi possível criar: "+(e.message||JSON.stringify(e)))}}
+window.sheetAddPL=function(){const mz=matrixOf(SH.projectId);quickMake(tplPL(mz?mz.name:null),"MODELO FIN P&L")};
+window.sheetAddMatriz=function(){const p=projects.find(x=>x.id===SH.projectId);quickMake(tplMatriz(p&&p.name),"MATRIZ COMPETITIVA")};
 window.sheetTab=async function(id){if(!SH||id===SH.id)return;const a=document.activeElement;if(a&&a.blur)a.blur();if(timer)await flush();sheetOpen(id)};
 function plHint(){const f=String(SH.cells[1][2]||"");if(!/!/.test(f))return`<div class="notice" style="margin-top:10px">A <b>Receita Bruta (C2)</b> não está ligada à Matriz competitiva. Crie a Matriz neste projeto ou digite em C2: <code>='MATRIZ COMPETITIVA'!N8</code></div>`;
  const mz=matrixOf(SH.projectId),j=mz&&String((mz.cells[7]||[])[9]||"").trim();
